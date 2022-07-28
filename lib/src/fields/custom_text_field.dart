@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CustomTextFormField extends StatelessWidget {
   final TextInputType? keyboardType;
@@ -12,6 +13,7 @@ class CustomTextFormField extends StatelessWidget {
   final bool enabled;
   final List<String>? autofillHints;
   final String? label;
+  final List<TextInputFormatter>? inputFormatters;
 
   final Function(String)? onChanged;
   final Function(String)? onFieldSubmitted;
@@ -33,6 +35,7 @@ class CustomTextFormField extends StatelessWidget {
     this.enabled = true,
     this.autofillHints,
     this.label,
+    this.inputFormatters,
   })  : assert(controller == null || initialValue == null),
         super(key: key);
 
@@ -59,6 +62,7 @@ class CustomTextFormField extends StatelessWidget {
               keyboardType: keyboardType,
               textAlignVertical: TextAlignVertical.center,
               obscureText: keyboardType == TextInputType.visiblePassword,
+              inputFormatters: inputFormatters,
               style: Theme.of(context).textTheme.headline3!.copyWith(
                   fontSize: 14,
                   color: enabled ? null : Theme.of(context).primaryColor,
