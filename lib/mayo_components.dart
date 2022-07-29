@@ -10,3 +10,4 @@ export 'src/validators/email_field_validator.dart';
 export 'src/validators/password_field_validator.dart';
 export 'src/validators/person_name_field_validator.dart';
 export 'src/validators/phone_field_validator.dart';
+export 'src/validators/card_number_field_validator.dart';
