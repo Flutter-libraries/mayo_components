@@ -13,7 +13,7 @@ dependencies:
   formz: ^0.4.0
 
 dev_dependencies:
+  flutter_lints: ^2.0.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
   very_good_analysis: ^3.0.1
