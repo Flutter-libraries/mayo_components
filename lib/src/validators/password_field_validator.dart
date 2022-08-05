@@ -9,7 +9,8 @@ enum PasswordValidationError {
 /// {@template password}
 /// Form input for an password input.
 /// {@endtemplate}
-class PasswordFieldValidator extends FormzInput<String, PasswordValidationError> {
+class PasswordFieldValidator
+    extends FormzInput<String, PasswordValidationError> {
   /// {@macro password}
   const PasswordFieldValidator.pure() : super.pure('');
 

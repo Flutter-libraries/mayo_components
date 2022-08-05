@@ -9,12 +9,14 @@ enum PersonNameValidationError {
 /// {@template PersonName}
 /// Form input for an PersonName input.
 /// {@endtemplate}
-class PersonNameFieldValidator extends FormzInput<String, PersonNameValidationError> {
+class PersonNameFieldValidator
+    extends FormzInput<String, PersonNameValidationError> {
   /// {@macro PersonName}
   const PersonNameFieldValidator.pure() : super.pure('');
 
   /// {@macro PersonName}
-  const PersonNameFieldValidator.dirty([String value = '']) : super.dirty(value);
+  const PersonNameFieldValidator.dirty([String value = ''])
+      : super.dirty(value);
 
   // static final RegExp _PersonNameRegExp = RegExp('[0-9]');
 

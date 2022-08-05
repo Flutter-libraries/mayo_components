@@ -12,10 +12,12 @@ enum ConfirmedPasswordValidationError {
 class ConfirmedPasswordFieldValidator
     extends FormzInput<String, ConfirmedPasswordValidationError> {
   /// {@macro confirmed_password}
-  const ConfirmedPasswordFieldValidator.pure({this.password = ''}) : super.pure('');
+  const ConfirmedPasswordFieldValidator.pure({this.password = ''})
+      : super.pure('');
 
   /// {@macro confirmed_password}
-  const ConfirmedPasswordFieldValidator.dirty({required this.password, String value = ''})
+  const ConfirmedPasswordFieldValidator.dirty(
+      {required this.password, String value = ''})
       : super.dirty(value);
 
   /// The original password.
