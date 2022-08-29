@@ -13,6 +13,7 @@ class CustomTextFormField extends StatelessWidget {
   final bool enabled;
   final List<String>? autofillHints;
   final String? label;
+  final Color? fillColor;
   final List<TextInputFormatter>? inputFormatters;
 
   final Function(String)? onChanged;
@@ -36,6 +37,7 @@ class CustomTextFormField extends StatelessWidget {
     this.autofillHints,
     this.label,
     this.inputFormatters,
+    this.fillColor = Colors.white,
   })  : assert(controller == null || initialValue == null),
         super(key: key);
 
@@ -71,7 +73,7 @@ class CustomTextFormField extends StatelessWidget {
                   labelText: label,
                   errorText: errorText,
                   hintText: hintText,
-                  fillColor: Colors.white,
+                  fillColor: fillColor,
                   filled: true,
                   focusColor: Colors.red,
                   hintStyle: TextStyle(
