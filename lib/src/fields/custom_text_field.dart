@@ -2,24 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class CustomTextFormField extends StatelessWidget {
-  final TextInputType? keyboardType;
-  final String? title;
-  final String hintText;
-  final double separation;
-  final String? errorText;
-  final TextEditingController? controller;
-  final String? initialValue;
-  final FocusNode? focusNode;
-  final bool enabled;
-  final List<String>? autofillHints;
-  final String? label;
-  final Color? fillColor;
-  final List<TextInputFormatter>? inputFormatters;
-
-  final Function(String)? onChanged;
-  final Function(String)? onFieldSubmitted;
-  final Function()? onEditingComplete;
-
+  /// Constructor
   const CustomTextFormField({
     Key? key,
     this.keyboardType,
@@ -38,8 +21,91 @@ class CustomTextFormField extends StatelessWidget {
     this.label,
     this.inputFormatters,
     this.fillColor = Colors.white,
-  })  : assert(controller == null || initialValue == null),
+  })  : assert(
+          controller == null || initialValue == null,
+          'Controller and initialValue are no compatibles',
+        ),
         super(key: key);
+
+  ///
+  /// [@var		final	TextInputType]
+  ///
+  final TextInputType? keyboardType;
+
+  ///
+  /// [@var		final	String]
+  ///
+  final String? title;
+
+  ///
+  /// [@var		final	String]
+  ///
+  final String hintText;
+
+  ///
+  /// [@var		final	double]
+  ///
+  final double separation;
+
+  ///
+  /// [@var		final	String]
+  ///
+  final String? errorText;
+
+  ///
+  /// [@var		final	TextEditingController]
+  ///
+  final TextEditingController? controller;
+
+  ///
+  /// [@var		final	String]
+  ///
+  final String? initialValue;
+
+  ///
+  /// [@var		final	FocusNode]
+  ///
+  final FocusNode? focusNode;
+
+  ///
+  /// [@var		final	bool]
+  ///
+  final bool enabled;
+
+  ///
+  /// [@var		mixed	autofillHints]
+  ///
+  final List<String>? autofillHints;
+
+  ///
+  /// [@var		final	String]
+  ///
+  final String? label;
+
+  ///
+  /// [@var		final	Color]
+  ///
+  final Color? fillColor;
+
+  ///
+  /// [@var		mixed	inputFormatters]
+  ///
+  final List<TextInputFormatter>? inputFormatters;
+
+  ///
+  /// [@var		mixed	onChanged]
+  ///
+  final void Function(String)? onChanged;
+
+  ///
+  /// [@var		mixed	onFieldSubmitted]
+  ///
+  final void Function(String)? onFieldSubmitted;
+
+  ///
+  /// [@var		mixed	onEditingComplete]
+  ///
+  final void Function()? onEditingComplete;
 
   @override
   Widget build(BuildContext context) {
@@ -66,34 +132,43 @@ class CustomTextFormField extends StatelessWidget {
               obscureText: keyboardType == TextInputType.visiblePassword,
               inputFormatters: inputFormatters,
               style: Theme.of(context).textTheme.headline3!.copyWith(
-                  fontSize: 14,
-                  color: enabled ? null : Theme.of(context).primaryColor,
-                  fontWeight: enabled ? null : FontWeight.w500),
+                    fontSize: 14,
+                    color: enabled ? null : Theme.of(context).primaryColor,
+                    fontWeight: enabled ? null : FontWeight.w500,
+                  ),
               decoration: InputDecoration(
-                  labelText: label,
-                  errorText: errorText,
-                  hintText: hintText,
-                  fillColor: fillColor,
-                  filled: true,
-                  focusColor: Colors.red,
-                  hintStyle: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[300],
-                      fontWeight: FontWeight.w600),
-                  enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                          width: 1, color: Colors.black.withOpacity(0.1))),
-                  disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                          width: 1, color: Colors.black.withOpacity(0.1))),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
-                          width: 1, color: Colors.black.withOpacity(0.1))),
-                  contentPadding:
-                      const EdgeInsets.only(bottom: 16, left: 8, right: 8)),
+                labelText: label,
+                errorText: errorText,
+                hintText: hintText,
+                fillColor: fillColor,
+                filled: true,
+                focusColor: Colors.red,
+                hintStyle: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[300],
+                  fontWeight: FontWeight.w600,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Colors.black.withOpacity(0.1),
+                  ),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Colors.black.withOpacity(0.1),
+                  ),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Colors.black.withOpacity(0.1),
+                  ),
+                ),
+                contentPadding:
+                    const EdgeInsets.only(bottom: 16, left: 8, right: 8),
+              ),
             )
           ],
         ),
