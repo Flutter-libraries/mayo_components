@@ -110,47 +110,56 @@ class RowAutoLayout extends StatelessWidget {
   ///
   /// Calculate cell width using percent, spacing and padding
   ///
-  double getCellWidth(BuildContext context, double percent) =>
-      ScreenSizeManager.screenWidthPercent(
-        context,
-        percent,
-      ) -
-      padding -
-      spacing / 2;
+  double getCellWidth(double percent, double width) =>
+      (width * percent) - padding - spacing / 2;
+
+  ///
+  /// Get cell pading by index
+  ///
+  EdgeInsets getCellPadding(bool isFirst, bool isLast) => isFirst
+      ? EdgeInsets.fromLTRB(padding, padding, 0, padding)
+      : isLast
+          ? EdgeInsets.fromLTRB(0, padding, padding, padding)
+          : EdgeInsets.fromLTRB(0, padding, 0, padding);
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: mainAxisAlignment ?? MainAxisAlignment.start,
-      crossAxisAlignment: crossAxisAlignment ?? CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < children.length; i++) ...{
-          if (widthsPercent != null)
-            SizedBox(
-              width: getCellWidth(
-                context,
-                widthsPercent!.elementAt(i),
-              ),
-              child: padding > 0
+    // Using LayoutBuilder to get the widget maxWidth, can't use screen maxWidth 
+    // because the widget can be in a part of the screen
+    return LayoutBuilder(
+      builder: (_, constrains) => Row(
+        mainAxisAlignment: mainAxisAlignment ?? MainAxisAlignment.start,
+        crossAxisAlignment: crossAxisAlignment ?? CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < children.length; i++) ...{
+            if (widthsPercent != null)
+              SizedBox(
+                width: getCellWidth(
+                  widthsPercent!.elementAt(i),
+                  constrains.maxWidth,
+                ),
+                child: padding > 0
+                    ? Padding(
+                        padding:
+                            getCellPadding(i == 0, i == children.length - 1),
+                        child: children[i],
+                      )
+                    : children[i],
+              )
+            else
+              padding > 0
                   ? Padding(
-                      padding: EdgeInsets.all(padding),
+                      padding: getCellPadding(i == 0, i == children.length - 1),
                       child: children[i],
                     )
                   : children[i],
-            )
-          else
-            padding > 0
-                ? Padding(
-                    padding: EdgeInsets.all(padding),
-                    child: children[i],
-                  )
-                : children[i],
-          if (i != children.length - 1)
-            SizedBox(
-              width: spacing,
-            )
-        },
-      ],
+            if (i != children.length - 1)
+              SizedBox(
+                width: spacing,
+              )
+          },
+        ],
+      ),
     );
   }
 }
@@ -201,6 +210,15 @@ class ColumnAutoLayout extends StatelessWidget {
   ///
   final CrossAxisAlignment? crossAxisAlignment;
 
+  ///
+  /// Get cell pading by index
+  ///
+  EdgeInsets getCellPadding(bool isFirst, bool isLast) => isFirst
+      ? EdgeInsets.fromLTRB(padding, padding, padding, 0)
+      : isLast
+          ? EdgeInsets.fromLTRB(padding, 0, padding, padding)
+          : EdgeInsets.fromLTRB(padding, 0, padding, 0);
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -209,10 +227,25 @@ class ColumnAutoLayout extends StatelessWidget {
       children: [
         for (var i = 0; i < children.length; i++) ...{
           if (padding > 0)
-            Padding(
-              padding: EdgeInsets.all(padding),
-              child: children[i],
-            )
+            if (children[i] is Expanded)
+              Expanded(
+                child: Padding(
+                  padding: getCellPadding(i == 0, i == children.length - 1),
+                  child: (children[i] as Expanded).child,
+                ),
+              )
+            else if (children[i] is Flexible)
+              Flexible(
+                child: Padding(
+                  padding: getCellPadding(i == 0, i == children.length - 1),
+                  child: (children[i] as Flexible).child,
+                ),
+              )
+            else
+              Padding(
+                padding: getCellPadding(i == 0, i == children.length - 1),
+                child: children[i],
+              )
           else
             children[i],
           if (i != children.length - 1)

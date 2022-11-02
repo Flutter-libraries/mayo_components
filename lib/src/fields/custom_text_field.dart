@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+///
+/// [CustomTextFormField.]
+///
+/// [@author	Unknown]
+/// [ @since	v0.0.1 ]
+/// [@version	v1.0.0	Wednesday, November 2nd, 2022]
+/// [@see		StatelessWidget]
+/// [@global]
+///
 class CustomTextFormField extends StatelessWidget {
   /// Constructor
   const CustomTextFormField({
-    Key? key,
+    super.key,
     this.keyboardType,
     this.title,
     this.separation = 8,
@@ -21,11 +30,10 @@ class CustomTextFormField extends StatelessWidget {
     this.label,
     this.inputFormatters,
     this.fillColor = Colors.white,
-  })  : assert(
+  }) : assert(
           controller == null || initialValue == null,
           'Controller and initialValue are no compatibles',
-        ),
-        super(key: key);
+        );
 
   ///
   /// [@var		final	TextInputType]
@@ -113,7 +121,7 @@ class CustomTextFormField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title != null)
-          Text(title!, style: Theme.of(context).textTheme.headline6),
+          Text(title!, style: Theme.of(context).textTheme.bodyText2),
         SizedBox(height: title != null ? separation : 0),
         Stack(
           children: [
@@ -131,11 +139,7 @@ class CustomTextFormField extends StatelessWidget {
               textAlignVertical: TextAlignVertical.center,
               obscureText: keyboardType == TextInputType.visiblePassword,
               inputFormatters: inputFormatters,
-              style: Theme.of(context).textTheme.headline3!.copyWith(
-                    fontSize: 14,
-                    color: enabled ? null : Theme.of(context).primaryColor,
-                    fontWeight: enabled ? null : FontWeight.w500,
-                  ),
+              style: Theme.of(context).textTheme.bodyText1,
               decoration: InputDecoration(
                 labelText: label,
                 errorText: errorText,
