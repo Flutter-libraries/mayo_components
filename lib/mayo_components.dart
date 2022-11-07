@@ -3,6 +3,7 @@ library mayo_components;
 export 'src/dialogs/basic.dart';
 export 'src/fields/custom_text_area.dart';
 export 'src/fields/custom_text_field.dart';
+export 'src/fields/drag_and_drop_image.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';
 export 'src/toasts/basic.dart';

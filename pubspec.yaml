@@ -10,8 +10,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  formz: ^0.4.0
+  dotted_decoration: ^2.0.0
+  flutter_dropzone: ^3.0.5
   fluttertoast: ^8.1.1
+  formz: ^0.4.0
 
 dev_dependencies:
   flutter_lints: ^2.0.0
