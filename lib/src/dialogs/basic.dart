@@ -22,16 +22,16 @@ class AlertDialogLayout extends StatelessWidget {
   });
 
   /// Confirm dialog with 2 buttons
-  factory AlertDialogLayout.confirm({
-    required BuildContext context,
-    required String title,
-    String? message,
-    Widget? content,
-    String? confirmButtonText,
-    String? cancelButtonText,
-    required void Function() onConfirmPressed,
-    required void Function() oncancelPressed,
-  }) {
+  factory AlertDialogLayout.confirm(
+      {required BuildContext context,
+      required String title,
+      String? message,
+      Widget? content,
+      String? confirmButtonText,
+      String? cancelButtonText,
+      required void Function() onConfirmPressed,
+      required void Function() oncancelPressed,
+      bool confirmEnabled = true}) {
     return AlertDialogLayout(
       title: title,
       actionIcon: Icons.warning_amber_rounded,
@@ -40,7 +40,7 @@ class AlertDialogLayout extends StatelessWidget {
       actions: [
         ElevatedButton(
           style: Theme.of(context).elevatedButtonTheme.style,
-          onPressed: onConfirmPressed,
+          onPressed: confirmEnabled ? onConfirmPressed : null,
           child: Text(confirmButtonText ?? 'Confirm'),
         ),
         OutlinedButton(

@@ -5,6 +5,7 @@ export 'src/fields/custom_text_area.dart';
 export 'src/fields/custom_text_field.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';
+export 'src/toasts/basic.dart';
 export 'src/validators/birthdate_field_validator.dart';
 export 'src/validators/card_number_field_validator.dart';
 export 'src/validators/checkbox_required_validator.dart';
