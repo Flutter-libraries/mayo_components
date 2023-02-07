@@ -25,6 +25,8 @@ class ConfirmedPasswordFieldValidator
 
   @override
   ConfirmedPasswordValidationError? validator(String? value) {
-    return password == value ? null : ConfirmedPasswordValidationError.invalid;
+    return password.isNotEmpty && password == value
+        ? null
+        : ConfirmedPasswordValidationError.invalid;
   }
 }
