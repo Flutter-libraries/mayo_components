@@ -92,7 +92,7 @@ class ExpiryDate {
 
 extension CardExpiryDateSplit on CardExpiryDateFieldValidator {
   ExpiryDate? getModel() {
-    if (valid) {
+    if (isValid) {
       var split = value.split(RegExp(r'(\/)'));
       return ExpiryDate(int.parse(split[0]), int.parse(split[1]));
     } else {
