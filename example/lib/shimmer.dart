@@ -45,12 +45,27 @@ class _ShimmerEffectPageState extends State<ShimmerEffectPage> {
         height: 72,
         child: ListView(
           scrollDirection: Axis.horizontal,
-          children: const [
-            CircleListItem(),
-            CircleListItem(),
-            CircleListItem(),
-            CircleListItem(),
-          ],
+          children: _isLoading
+              ? const [
+                  Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: CircleShimmer(size: 54)),
+                  Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: CircleShimmer(size: 54)),
+                  Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: CircleShimmer(size: 54)),
+                  Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: CircleShimmer(size: 54)),
+                ]
+              : const [
+                  CircleListItem(),
+                  CircleListItem(),
+                  CircleListItem(),
+                  CircleListItem(),
+                ],
         ),
       ),
     );
@@ -107,7 +122,9 @@ class CardListItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildImage(),
+          isLoading
+              ? const RectangleShimmer(width: double.infinity, height: 200)
+              : _buildImage(),
           const SizedBox(height: 16),
           _buildText(),
         ],
@@ -138,25 +155,17 @@ class CardListItem extends StatelessWidget {
 
   Widget _buildText() {
     if (isLoading) {
-      return Column(
+      return const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
+          RectangleShimmer(
             width: double.infinity,
             height: 24,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(16),
-            ),
           ),
-          const SizedBox(height: 16),
-          Container(
+          SizedBox(height: 16),
+          RectangleShimmer(
             width: 250,
             height: 24,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(16),
-            ),
           ),
         ],
       );
@@ -169,5 +178,51 @@ class CardListItem extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+class CircleShimmer extends StatelessWidget {
+  const CircleShimmer({super.key, required this.size, this.color});
+
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color ?? Colors.black,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class RectangleShimmer extends StatelessWidget {
+  const RectangleShimmer({
+    required this.width,
+    required this.height,
+    this.boxDecoration,
+    super.key,
+  });
+
+  final double width;
+  final double height;
+
+  final BoxDecoration? boxDecoration;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: boxDecoration ??
+          BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(16),
+          ),
+    );
   }
 }
