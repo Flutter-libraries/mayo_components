@@ -18,4 +18,3 @@ export 'src/validators/empty_field_validator.dart';
 export 'src/validators/password_field_validator.dart';
 export 'src/validators/person_name_field_validator.dart';
 export 'src/validators/phone_field_validator.dart';
-

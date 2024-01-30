@@ -175,3 +175,49 @@ class _SlidingGradientTransform extends GradientTransform {
     return Matrix4.translationValues(bounds.width * slidePercent, 0, 0);
   }
 }
+
+class ShimmerCircle extends StatelessWidget {
+  const ShimmerCircle({super.key, required this.size, this.color});
+
+  final double size;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color ?? Colors.black,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+class ShimmerRectangle extends StatelessWidget {
+  const ShimmerRectangle({
+    required this.width,
+    required this.height,
+    this.boxDecoration,
+    super.key,
+  });
+
+  final double width;
+  final double height;
+
+  final BoxDecoration? boxDecoration;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: boxDecoration ??
+          BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(16),
+          ),
+    );
+  }
+}
