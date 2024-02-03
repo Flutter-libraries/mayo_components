@@ -1,6 +1,7 @@
 ///
 library mayo_components;
 
+export 'src/components/text_read_more.dart';
 export 'src/dialogs/basic.dart';
 export 'src/fields/custom_text_area.dart';
 export 'src/fields/custom_text_field.dart';

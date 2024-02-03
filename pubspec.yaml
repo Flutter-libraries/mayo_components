@@ -1,6 +1,6 @@
 name: mayo_components
 description: This package contains common components like fields, text areas, etc. Shared between different applications
-version: 0.0.16
+version: 0.0.17
 homepage: https://mayosoftware.es
 
 environment:
