@@ -108,3 +108,11 @@ In cubit add the validation for the field type
     ));
   }
 ```
+
+## Media
+
+### AudioPlayer
+
+- Plugin [audio player](https://pub.dev/packages/audioplayers)
+
+- [Example](https://github.com/bluefireteam/audioplayers/blob/main/packages/audioplayers/example/lib/components/player_widget.dart)

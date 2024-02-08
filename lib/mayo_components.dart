@@ -8,6 +8,7 @@ export 'src/fields/custom_text_field.dart';
 export 'src/fields/drag_and_drop_image.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';
+export 'src/media/audio_player_widget.dart';
 export 'src/shimmer/shimmer_loading.dart';
 export 'src/toasts/basic.dart';
 export 'src/validators/birthdate_field_validator.dart';
