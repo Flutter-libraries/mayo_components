@@ -3,50 +3,71 @@ import 'package:flutter/material.dart';
 const kMaxLines = 5;
 
 ///
-class TextReadMore extends StatelessWidget {
+class TextReadMore extends StatefulWidget {
   /// Constructor
   const TextReadMore({
     required this.text,
     required this.textStyle,
-    required this.readMoreButton,
-    required this.padding,
+    required this.buttonText,
+    this.buttonStyle,
+    this.floating = false,
     this.maxLines = kMaxLines,
     super.key,
-    this.unread = true,
   });
 
   final String text;
   final TextStyle textStyle;
-  final Widget readMoreButton;
-  final EdgeInsets padding;
+  final TextStyle? buttonStyle;
+  final String buttonText;
   final int maxLines;
-  final bool unread;
+  final bool floating;
 
+  @override
+  State<TextReadMore> createState() => _TextReadMoreState();
+}
+
+class _TextReadMoreState extends State<TextReadMore> {
+  bool unread = true;
   @override
   Widget build(BuildContext context) {
     final span = TextSpan(
-      text: text,
-      style: textStyle,
+      text: widget.text,
+      style: widget.textStyle,
     );
     final tp = TextPainter(text: span, textDirection: TextDirection.ltr)
       ..layout(maxWidth: MediaQuery.of(context).size.width - 64);
     final numLines = tp.computeLineMetrics().length;
-    // final text = numLines > 5
-    //     ? '${state.maker.shopDescription}\n\n'
-    //     : state.maker.shopDescription;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Stack(
           children: [
-            Text(
-              text,
-              style: textStyle,
-              maxLines: unread ? maxLines : null,
-              overflow: unread ? TextOverflow.fade : null,
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(
+                widget.text,
+                style: widget.textStyle,
+                maxLines: unread ? widget.maxLines : null,
+                overflow: unread ? TextOverflow.fade : null,
+              ),
             ),
-            if (unread && numLines > maxLines) readMoreButton
+            if (unread && numLines > widget.maxLines)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      unread = false;
+                    });
+                  },
+                  child: Text(
+                    widget.buttonText,
+                    style: widget.buttonStyle,
+                  ),
+                ),
+              ),
           ],
         ),
       ],

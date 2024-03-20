@@ -53,18 +53,8 @@ class _MainAppState extends State<MainApp> {
                 fontSize: 16,
                 color: Colors.black,
               ),
-              readMoreButton: Positioned(
-                bottom: 0,
-                right: 4,
-                child: GestureDetector(
-                  onTap: () => setState(() {
-                    unread = false;
-                  }),
-                  child: const Text('Read more'),
-                ),
-              ),
-              padding: const EdgeInsets.all(16),
-              unread: unread,
+              buttonText: 'Read more',
+              
               maxLines: 5),
         ],
       ),
