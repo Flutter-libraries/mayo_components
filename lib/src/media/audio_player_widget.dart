@@ -94,7 +94,9 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       ? '${_position?.inMinutes.toString().padLeft(2, '0')}:${_position?.inSeconds.toString().padLeft(2, '0')}'
       : '00:00';
 
-  Duration? get remaining => _duration! - _position!;
+  Duration? get remaining => _duration == null || _position == null
+      ? Duration.zero
+      : _duration! - _position!;
 
   String get _remainingText => remaining != null
       ? '-${remaining?.inMinutes.toString().padLeft(2, '0')}:${remaining?.inSeconds.toString().padLeft(2, '0')}'
