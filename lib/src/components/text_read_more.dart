@@ -12,6 +12,7 @@ class TextReadMore extends StatefulWidget {
     this.buttonStyle,
     this.floating = false,
     this.maxLines = kMaxLines,
+    this.clickable = true,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class TextReadMore extends StatefulWidget {
   final String buttonText;
   final int maxLines;
   final bool floating;
+  final bool clickable;
 
   @override
   State<TextReadMore> createState() => _TextReadMoreState();
@@ -56,17 +58,22 @@ class _TextReadMoreState extends State<TextReadMore> {
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      unread = false;
-                    });
-                  },
-                  child: Text(
-                    widget.buttonText,
-                    style: widget.buttonStyle,
-                  ),
-                ),
+                child: widget.clickable
+                    ? GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            unread = false;
+                          });
+                        },
+                        child: Text(
+                          widget.buttonText,
+                          style: widget.buttonStyle,
+                        ),
+                      )
+                    : Text(
+                        widget.buttonText,
+                        style: widget.buttonStyle,
+                      ),
               ),
           ],
         ),
