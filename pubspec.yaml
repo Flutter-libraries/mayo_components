@@ -1,6 +1,6 @@
 name: mayo_components
 description: This package contains common components like fields, text areas, etc. Shared between different applications
-version: 0.0.24
+version: 0.0.25
 homepage: https://mayosoftware.es
 
 environment:
@@ -8,16 +8,15 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  audioplayers: ^5.2.1
+  audioplayers: ^6.0.0
   dotted_decoration: ^2.0.0
   flutter:
     sdk: flutter
-  flutter_dropzone: ^3.0.5
-  fluttertoast: ^8.1.1
-  formz: ^0.6.1
+  flutter_dropzone: ^4.0.1
+  formz: ^0.7.0
 
 dev_dependencies:
-  flutter_lints: ^3.0.1
+  flutter_lints: ^4.0.0
   flutter_test:
     sdk: flutter
   very_good_analysis: ^5.1.0
