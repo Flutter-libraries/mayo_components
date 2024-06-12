@@ -2,7 +2,6 @@
 library mayo_components;
 
 export 'src/components/text_read_more.dart';
-export 'src/dialogs/basic.dart';
 
 export 'src/fields/drag_and_drop_image.dart';
 export 'src/layout/basic.dart';

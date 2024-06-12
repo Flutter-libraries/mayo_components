@@ -9,7 +9,7 @@ class EmptyFieldValidator extends FormzInput<String, EmptyFieldValidatorError> {
   const EmptyFieldValidator.pure() : super.pure('');
 
   // Call super.dirty to represent a modified form input.
-  const EmptyFieldValidator.dirty([String value = '']) : super.dirty(value);
+  const EmptyFieldValidator.dirty([super.value = '']) : super.dirty();
 
   // Override validator to handle validating a given input value.
   @override

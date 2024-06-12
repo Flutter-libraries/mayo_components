@@ -13,8 +13,8 @@ import 'package:mayo_components/src/layout/screen_size_manager.dart';
 class RowAutoLayout extends StatelessWidget {
   /// Constructor
   RowAutoLayout({
-    super.key,
     required this.children,
+    super.key,
     this.spacing = 0.0,
     this.padding = 0.0,
     this.widthsPercent,
@@ -124,7 +124,7 @@ class RowAutoLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Using LayoutBuilder to get the widget maxWidth, can't use screen maxWidth 
+    // Using LayoutBuilder to get the widget maxWidth, can't use screen maxWidth
     // because the widget can be in a part of the screen
     return LayoutBuilder(
       builder: (_, constrains) => Row(
@@ -156,7 +156,7 @@ class RowAutoLayout extends StatelessWidget {
             if (i != children.length - 1)
               SizedBox(
                 width: spacing,
-              )
+              ),
           },
         ],
       ),
@@ -176,8 +176,8 @@ class RowAutoLayout extends StatelessWidget {
 class ColumnAutoLayout extends StatelessWidget {
   /// Constructor
   const ColumnAutoLayout({
-    super.key,
     required this.children,
+    super.key,
     this.spacing = 0,
     this.padding = 0,
     this.mainAxisAlignment,
@@ -251,7 +251,7 @@ class ColumnAutoLayout extends StatelessWidget {
           if (i != children.length - 1)
             SizedBox(
               height: spacing,
-            )
+            ),
         },
       ],
     );
@@ -270,8 +270,8 @@ class ColumnAutoLayout extends StatelessWidget {
 class RowResponsive extends StatelessWidget {
   /// Constructor
   const RowResponsive({
-    super.key,
     required this.children,
+    super.key,
     this.spacing = 0,
     this.padding = 0,
     this.widthsPercent,

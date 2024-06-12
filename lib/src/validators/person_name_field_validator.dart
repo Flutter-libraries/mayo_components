@@ -15,8 +15,7 @@ class PersonNameFieldValidator
   const PersonNameFieldValidator.pure() : super.pure('');
 
   /// {@macro PersonName}
-  const PersonNameFieldValidator.dirty([String value = ''])
-      : super.dirty(value);
+  const PersonNameFieldValidator.dirty([super.value = '']) : super.dirty();
 
   // static final RegExp _PersonNameRegExp = RegExp('[0-9]');
 

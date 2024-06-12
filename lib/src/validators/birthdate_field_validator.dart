@@ -15,7 +15,7 @@ class BirthDateFieldValidator
   const BirthDateFieldValidator.pure() : super.pure(null);
 
   /// {@macro BirthDate}
-  const BirthDateFieldValidator.dirty([DateTime? value]) : super.dirty(value);
+  const BirthDateFieldValidator.dirty([super.value]) : super.dirty();
 
   @override
   BirthDateValidationError? validator(DateTime? value) {

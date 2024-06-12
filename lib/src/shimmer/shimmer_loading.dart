@@ -19,9 +19,9 @@ const _shimmerGradientDefault = LinearGradient(
 class ShimmerLoading extends StatefulWidget {
   /// Constructor.
   const ShimmerLoading({
-    super.key,
     required this.isLoading,
     required this.child,
+    super.key,
   });
 
   /// Flag to indicate if the shimmer effect is loading.
@@ -79,7 +79,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading> {
     final shimmerSize = shimmer.size;
     final gradient = shimmer.gradient;
     final offsetWithinShimmer = shimmer.getDescendantOffset(
-      descendant: context.findRenderObject() as RenderBox,
+      descendant: context.findRenderObject()! as RenderBox,
     );
 
     return ShaderMask(
@@ -100,15 +100,14 @@ class _ShimmerLoadingState extends State<ShimmerLoading> {
 }
 
 class Shimmer extends StatefulWidget {
-  static ShimmerState? of(BuildContext context) {
-    return context.findAncestorStateOfType<ShimmerState>();
-  }
-
   const Shimmer({
     super.key,
     this.linearGradient = _shimmerGradientDefault,
     this.child,
   });
+  static ShimmerState? of(BuildContext context) {
+    return context.findAncestorStateOfType<ShimmerState>();
+  }
 
   final LinearGradient linearGradient;
   final Widget? child;
@@ -133,13 +132,13 @@ class ShimmerState extends State<Shimmer> with SingleTickerProviderStateMixin {
   bool get isSized =>
       (context.findRenderObject() as RenderBox?)?.hasSize ?? false;
 
-  Size get size => (context.findRenderObject() as RenderBox).size;
+  Size get size => (context.findRenderObject()! as RenderBox).size;
 
   Offset getDescendantOffset({
     required RenderBox descendant,
     Offset offset = Offset.zero,
   }) {
-    final shimmerBox = context.findRenderObject() as RenderBox;
+    final shimmerBox = context.findRenderObject()! as RenderBox;
     return descendant.localToGlobal(offset, ancestor: shimmerBox);
   }
 
@@ -177,7 +176,7 @@ class _SlidingGradientTransform extends GradientTransform {
 }
 
 class ShimmerCircle extends StatelessWidget {
-  const ShimmerCircle({super.key, required this.size, this.color});
+  const ShimmerCircle({required this.size, super.key, this.color});
 
   final double size;
   final Color? color;

@@ -16,9 +16,10 @@ class ConfirmedPasswordFieldValidator
       : super.pure('');
 
   /// {@macro confirmed_password}
-  const ConfirmedPasswordFieldValidator.dirty(
-      {required this.password, String value = ''})
-      : super.dirty(value);
+  const ConfirmedPasswordFieldValidator.dirty({
+    required this.password,
+    String value = '',
+  }) : super.dirty(value);
 
   /// The original password.
   final String password;

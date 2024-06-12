@@ -15,7 +15,7 @@ class PasswordFieldValidator
   const PasswordFieldValidator.pure() : super.pure('');
 
   /// {@macro password}
-  const PasswordFieldValidator.dirty([String value = '']) : super.dirty(value);
+  const PasswordFieldValidator.dirty([super.value = '']) : super.dirty();
 
   // static final _passwordRegExp =
   //     RegExp(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$');

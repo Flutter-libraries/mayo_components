@@ -15,8 +15,7 @@ class CheckboxRequiredFieldValidator
   const CheckboxRequiredFieldValidator.pure() : super.pure(null);
 
   /// {@macro CheckboxRequired}
-  const CheckboxRequiredFieldValidator.dirty([bool? value])
-      : super.dirty(value);
+  const CheckboxRequiredFieldValidator.dirty([super.value]) : super.dirty();
 
   @override
   CheckboxRequiredValidationError? validator(bool? value) {

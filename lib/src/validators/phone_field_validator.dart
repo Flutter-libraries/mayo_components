@@ -14,7 +14,7 @@ class PhoneFieldValidator extends FormzInput<String, PhoneValidationError> {
   const PhoneFieldValidator.pure() : super.pure('');
 
   /// {@macro phone}
-  const PhoneFieldValidator.dirty([String value = '']) : super.dirty(value);
+  const PhoneFieldValidator.dirty([super.value = '']) : super.dirty();
 
   static final RegExp _phoneRegExp = RegExp('[0-9]');
 

@@ -68,17 +68,17 @@ class DropImageInfo {
 class DragAndDropImage extends StatefulWidget {
   ///
   const DragAndDropImage({
-    super.key,
-    this.imageUrl,
     required this.onHoverPreview,
     required this.onDeletePressed,
     required this.onDropViewLoaded,
     required this.onDropImage,
-    this.onUpdateButtonPressed,
     required this.dropAreaContent,
     required this.width,
     required this.height,
     required this.previewAreaContent,
+    super.key,
+    this.imageUrl,
+    this.onUpdateButtonPressed,
   });
 
   ///
@@ -162,7 +162,7 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
                   color: Colors.black.withOpacity(0.25),
                   offset: const Offset(0, 4),
                   blurRadius: 4,
-                )
+                ),
               ],
               border: Border.all(
                 color: Theme.of(context).colorScheme.onPrimary,
@@ -190,7 +190,7 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
             OutlinedButton(
               onPressed: widget.onDeletePressed,
               child: const Text('Eliminar'),
-            )
+            ),
           ],
         ),
       );

@@ -15,8 +15,7 @@ class CardNumberFieldValidator
   const CardNumberFieldValidator.pure() : super.pure('');
 
   /// {@macro CardNumber}
-  const CardNumberFieldValidator.dirty([String value = ''])
-      : super.dirty(value);
+  const CardNumberFieldValidator.dirty([super.value = '']) : super.dirty();
 
   static final RegExp _cardNumberRegExp = RegExp('[0-9]');
 
@@ -43,8 +42,7 @@ class CardExpiryDateFieldValidator
   const CardExpiryDateFieldValidator.pure() : super.pure('');
 
   /// {@macro CardNumber}
-  const CardExpiryDateFieldValidator.dirty([String value = ''])
-      : super.dirty(value);
+  const CardExpiryDateFieldValidator.dirty([super.value = '']) : super.dirty();
 
   static final RegExp _cardNumberRegExp =
       RegExp(r'^(0[1-9]|1[0-2])\/[0-9]{2}$');
@@ -71,7 +69,7 @@ class CardCVCFieldValidator extends FormzInput<String, CardCVCValidationError> {
   const CardCVCFieldValidator.pure() : super.pure('');
 
   /// {@macro CardNumber}
-  const CardCVCFieldValidator.dirty([String value = '']) : super.dirty(value);
+  const CardCVCFieldValidator.dirty([super.value = '']) : super.dirty();
 
   static final RegExp _cardNumberRegExp = RegExp(r'^[0-9]{3}$');
 
@@ -84,16 +82,15 @@ class CardCVCFieldValidator extends FormzInput<String, CardCVCValidationError> {
 }
 
 class ExpiryDate {
+  ExpiryDate(this.month, this.year);
   final int month;
   final int year;
-
-  ExpiryDate(this.month, this.year);
 }
 
 extension CardExpiryDateSplit on CardExpiryDateFieldValidator {
   ExpiryDate? getModel() {
     if (isValid) {
-      var split = value.split(RegExp(r'(\/)'));
+      final split = value.split(RegExp(r'(\/)'));
       return ExpiryDate(int.parse(split[0]), int.parse(split[1]));
     } else {
       return null;

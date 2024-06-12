@@ -46,15 +46,14 @@ class _MainAppState extends State<MainApp> {
             ),
           ),
           const Text('Read more widget'),
-          TextReadMore(
+          const TextReadMore(
               text:
                   '''Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur porta odio sit amet nibh dictum condimentum. Suspendisse ipsum quam, iaculis at urna hendrerit, tincidunt laoreet enim. Duis rutrum lectus sit amet sollicitudin vestibulum. Nunc posuere sapien at orci euismod tempus. Aenean pharetra tincidunt lectus. Suspendisse efficitur leo ut turpis venenatis vehicula. Aenean ac condimentum ligula. Ut commodo justo lorem, at scelerisque lacus consequat eu. Integer quis tellus i''',
-              textStyle: const TextStyle(
+              textStyle: TextStyle(
                 fontSize: 16,
                 color: Colors.black,
               ),
               buttonText: 'Read more',
-              
               maxLines: 5),
         ],
       ),
