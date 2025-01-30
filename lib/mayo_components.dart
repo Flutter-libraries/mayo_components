@@ -2,8 +2,7 @@
 library mayo_components;
 
 export 'src/components/text_read_more.dart';
-
-export 'src/fields/drag_and_drop_image.dart';
+export 'src/fields/fields.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';
 export 'src/media/audio_player_widget.dart';

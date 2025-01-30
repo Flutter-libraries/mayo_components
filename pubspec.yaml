@@ -13,10 +13,10 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_dropzone: ^4.0.1
-  formz: ^0.7.0
+  formz: ^0.8.0
 
 dev_dependencies:
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   flutter_test:
     sdk: flutter
-  very_good_analysis: ^6.0.0
+  very_good_analysis: ^7.0.0

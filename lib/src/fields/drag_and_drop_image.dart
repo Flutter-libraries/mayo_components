@@ -213,7 +213,7 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
             setState(() => _isDragging = false);
             widget.onHoverPreview(false);
           },
-          onDrop: (event) async {
+          onDropFile: (event) async {
             widget.onDropImage(
               DropImageInfo(
                 await _controller.createFileUrl(event),
