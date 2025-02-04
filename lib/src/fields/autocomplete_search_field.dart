@@ -9,6 +9,10 @@ typedef AutocompleteItemBuilder<T> = Widget? Function(
   String? query,
 );
 
+typedef AutocompleteValueBuilder<T> = String Function(
+  T option,
+);
+
 typedef AutocompleteInputDecoration = InputDecoration? Function(
   BuildContext context,
   TextEditingController? controller,
@@ -17,6 +21,7 @@ typedef AutocompleteInputDecoration = InputDecoration? Function(
 class AutocompleteSearchField<T extends Object> extends StatefulWidget {
   const AutocompleteSearchField({
     required this.itemBuilder,
+    required this.valueBuilder,
     this.initialValue,
     this.children,
     this.localWhere,
@@ -51,6 +56,7 @@ class AutocompleteSearchField<T extends Object> extends StatefulWidget {
 
   factory AutocompleteSearchField.floating({
     required AutocompleteItemBuilder<T> itemBuilder,
+    required AutocompleteValueBuilder<T> valueBuilder,
     String? initialValue,
     List<T>? children,
     bool Function(T option, String query)? localWhere,
@@ -67,6 +73,7 @@ class AutocompleteSearchField<T extends Object> extends StatefulWidget {
   }) {
     return AutocompleteSearchField(
       itemBuilder: itemBuilder,
+      valueBuilder: valueBuilder,
       initialValue: initialValue,
       children: children,
       localWhere: localWhere,
@@ -84,6 +91,7 @@ class AutocompleteSearchField<T extends Object> extends StatefulWidget {
   }
   factory AutocompleteSearchField.filled({
     required AutocompleteItemBuilder<T> itemBuilder,
+    required AutocompleteValueBuilder<T> valueBuilder,
     String? initialValue,
     List<T>? children,
     bool Function(T option, String query)? localWhere,
@@ -98,6 +106,7 @@ class AutocompleteSearchField<T extends Object> extends StatefulWidget {
   }) {
     return AutocompleteSearchField(
       itemBuilder: itemBuilder,
+      valueBuilder: valueBuilder,
       initialValue: initialValue,
       children: children,
       localWhere: localWhere,
@@ -128,6 +137,7 @@ class AutocompleteSearchField<T extends Object> extends StatefulWidget {
 
   // Item builder
   final AutocompleteItemBuilder<T> itemBuilder;
+  final AutocompleteValueBuilder<T> valueBuilder;
   final Widget? optionsTitle;
   final AutocompleteInputDecoration? textFieldDecoration;
   final Widget? divider;
@@ -277,16 +287,19 @@ class _AutocompleteSearchFieldState<T extends Object>
         },
         onSelected: (T selection) {
           debugPrint('You just selected $selection');
-          textController.text = selection.toString();
+          debugPrint('value ${widget.valueBuilder(selection)}');
+          textController.text = widget.valueBuilder(selection);
           widget.onSelected?.call(selection);
         },
+        displayStringForOption: widget.valueBuilder,
         optionsViewBuilder: (context, onSelected, options) => Align(
           alignment: Alignment.topLeft,
           child: Material(
             child: Container(
               width: constraints.biggest.width,
-              height: 58 * options.length.toDouble(),
-              color: widget.backgroundColor,
+              height: 40 + (60 * options.length.toDouble()),
+              color: widget.backgroundColor ??
+                  Theme.of(context).colorScheme.surface,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
