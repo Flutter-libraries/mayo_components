@@ -54,6 +54,8 @@ class DropImageInfo {
   ///
   String get fullFilename =>
       extension.isNotEmpty ? '$filename.$extension' : filename;
+
+  bool get isImage => mime.startsWith('image/');
 }
 
 ///
@@ -73,8 +75,8 @@ class DragAndDropImage extends StatefulWidget {
     required this.onDropViewLoaded,
     required this.onDropImage,
     required this.dropAreaContent,
-    required this.width,
-    required this.height,
+    this.width,
+    this.height,
     required this.previewAreaContent,
     super.key,
     this.imageUrl,
@@ -99,12 +101,12 @@ class DragAndDropImage extends StatefulWidget {
   ///
   /// [@var		final	double]
   ///
-  final double width;
+  final double? width;
 
   ///
   /// [@var		final	double]
   ///
-  final double height;
+  final double? height;
 
   ///
   /// [final void Function(DropzoneViewController controller)
@@ -197,55 +199,56 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
 
   Widget dropZone(BuildContext context, Key? key) {
     return Stack(
+      alignment: Alignment.center,
       children: [
-        DropzoneView(
-          key: key,
-          operation: DragOperation.copy,
-          cursor: CursorType.grab,
-          onCreated: (controller) => _controller = controller,
-          onLoaded: widget.onDropViewLoaded,
-          onError: (String? ev) => log('Error: $ev'),
-          onHover: () {
-            setState(() => _isDragging = true);
-            widget.onHoverPreview(true);
-          },
-          onLeave: () {
-            setState(() => _isDragging = false);
-            widget.onHoverPreview(false);
-          },
-          onDropFile: (event) async {
-            widget.onDropImage(
-              DropImageInfo(
-                await _controller.createFileUrl(event),
-                await _controller.getFileData(event),
-                await _controller.getFileMIME(event),
-                await _controller.getFilename(event),
-                await _controller.getFileSize(event),
-              ),
-            );
-            setState(() => _isDragging = false);
-          },
-          onDropMultiple: (ev) => log('Drop multiple: '),
-        ),
         Positioned.fill(
-          child: InkWell(
-            onTap: () => _controller.pickFiles().then(
-              (eventList) async {
-                if (eventList.isNotEmpty) {
-                  widget.onDropImage(
-                    DropImageInfo(
-                      await _controller.createFileUrl(eventList.first),
-                      await _controller.getFileData(eventList.first),
-                      await _controller.getFileMIME(eventList.first),
-                      await _controller.getFilename(eventList.first),
-                      await _controller.getFileSize(eventList.first),
-                    ),
-                  );
-                }
-              },
-            ),
-            child: widget.dropAreaContent,
+          child: DropzoneView(
+            key: key,
+            operation: DragOperation.copy,
+            cursor: CursorType.grab,
+            onCreated: (controller) => _controller = controller,
+            onLoaded: widget.onDropViewLoaded,
+            onError: (String? ev) => log('Error: $ev'),
+            onHover: () {
+              setState(() => _isDragging = true);
+              widget.onHoverPreview(true);
+            },
+            onLeave: () {
+              setState(() => _isDragging = false);
+              widget.onHoverPreview(false);
+            },
+            onDropFile: (event) async {
+              widget.onDropImage(
+                DropImageInfo(
+                  await _controller.createFileUrl(event),
+                  await _controller.getFileData(event),
+                  await _controller.getFileMIME(event),
+                  await _controller.getFilename(event),
+                  await _controller.getFileSize(event),
+                ),
+              );
+              setState(() => _isDragging = false);
+            },
+            onDropMultiple: (ev) => log('Drop multiple: '),
           ),
+        ),
+        InkWell(
+          onTap: () => _controller.pickFiles().then(
+            (eventList) async {
+              if (eventList.isNotEmpty) {
+                widget.onDropImage(
+                  DropImageInfo(
+                    await _controller.createFileUrl(eventList.first),
+                    await _controller.getFileData(eventList.first),
+                    await _controller.getFileMIME(eventList.first),
+                    await _controller.getFilename(eventList.first),
+                    await _controller.getFileSize(eventList.first),
+                  ),
+                );
+              }
+            },
+          ),
+          child: widget.dropAreaContent,
         ),
       ],
     );

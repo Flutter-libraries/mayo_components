@@ -6,6 +6,7 @@ export 'src/fields/fields.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';
 export 'src/media/audio_player_widget.dart';
+export 'src/media/full_screen_image.dart';
 export 'src/shimmer/shimmer_loading.dart';
 export 'src/validators/birthdate_field_validator.dart';
 export 'src/validators/card_number_field_validator.dart';

@@ -1,10 +1,10 @@
 # This is a generated file; do not edit or check into version control.
-audioplayers=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers-6.1.1/
-audioplayers_android=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_android-5.0.1/
-audioplayers_darwin=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_darwin-6.0.0/
-audioplayers_linux=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_linux-4.0.1/
+audioplayers=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers-6.2.0/
+audioplayers_android=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_android-5.0.3/
+audioplayers_darwin=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_darwin-6.1.0/
+audioplayers_linux=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_linux-4.1.0/
 audioplayers_web=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_web-5.0.1/
-audioplayers_windows=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_windows-4.0.0/
+audioplayers_windows=/Users/miguel/.pub-cache/hosted/pub.dev/audioplayers_windows-4.1.0/
 flutter_dropzone=/Users/miguel/.pub-cache/hosted/pub.dev/flutter_dropzone-4.2.1/
 flutter_dropzone_web=/Users/miguel/.pub-cache/hosted/pub.dev/flutter_dropzone_web-4.2.0/
 path_provider=/Users/miguel/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
@@ -12,3 +12,6 @@ path_provider_android=/Users/miguel/.pub-cache/hosted/pub.dev/path_provider_andr
 path_provider_foundation=/Users/miguel/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.1/
 path_provider_linux=/Users/miguel/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
 path_provider_windows=/Users/miguel/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+sqflite=/Users/miguel/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+sqflite_android=/Users/miguel/.pub-cache/hosted/pub.dev/sqflite_android-2.4.1/
+sqflite_darwin=/Users/miguel/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
