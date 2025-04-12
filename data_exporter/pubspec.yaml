@@ -1,0 +1,20 @@
+name: data_exporter
+description: "This package provides a data exporter for Flutter applications. It allows exporting data in various formats such as CSV, JSON, and XML. The package is designed to be easy to use and integrate into existing Flutter projects."
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.7.0
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  csv: ^6.0.0
+  share_plus: ^10.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

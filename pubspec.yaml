@@ -10,6 +10,10 @@ environment:
 dependencies:
   audioplayers: ^6.0.0
   cached_network_image: ^3.2.3
+  
+  data_exporter:
+    path: ./data_exporter
+
   dotted_decoration: ^2.0.0
   flutter:
     sdk: flutter

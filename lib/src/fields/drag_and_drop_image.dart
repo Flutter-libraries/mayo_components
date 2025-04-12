@@ -55,6 +55,7 @@ class DropImageInfo {
   String get fullFilename =>
       extension.isNotEmpty ? '$filename.$extension' : filename;
 
+  ///
   bool get isImage => mime.startsWith('image/');
 }
 
@@ -75,12 +76,14 @@ class DragAndDropImage extends StatefulWidget {
     required this.onDropViewLoaded,
     required this.onDropImage,
     required this.dropAreaContent,
+    required this.previewAreaContent,
     this.width,
     this.height,
-    required this.previewAreaContent,
-    super.key,
     this.imageUrl,
     this.onUpdateButtonPressed,
+    this.onDropImages,
+    this.multiple = false,
+    super.key,
   });
 
   ///
@@ -117,6 +120,10 @@ class DragAndDropImage extends StatefulWidget {
   final void Function(DropImageInfo dropImageInfo) onDropImage;
 
   ///
+  ///
+  final void Function(List<DropImageInfo> dropImageInfo)? onDropImages;
+
+  ///
   /// [@var		mixed	onDropViewLoaded]
   ///
   final void Function()? onDropViewLoaded;
@@ -135,6 +142,10 @@ class DragAndDropImage extends StatefulWidget {
   /// [@var		mixed	onDeletePressed]
   ///
   final void Function() onDeletePressed;
+
+  ///
+  ///
+  final bool multiple;
 
   @override
   State<DragAndDropImage> createState() => _DragAndDropImageState();
@@ -157,19 +168,7 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
               shape: Shape.box,
               strokeWidth: 4,
             )
-          : BoxDecoration(
-              color: const Color(0xFFFAFAFA),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  offset: const Offset(0, 4),
-                  blurRadius: 4,
-                ),
-              ],
-              border: Border.all(
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-            ),
+          : const BoxDecoration(),
       child: hasImage
           ? imagePreview(context, widget.imageUrl!)
           : dropZone(context, widget.key),
@@ -229,7 +228,26 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
               );
               setState(() => _isDragging = false);
             },
-            onDropMultiple: (ev) => log('Drop multiple: '),
+            onDropFiles: widget.multiple
+                ? (event) async {
+                    if (event == null) return;
+                    widget.onDropImages?.call(
+                      await Future.wait(
+                        event.map(
+                          (e) async => DropImageInfo(
+                            await _controller.createFileUrl(e),
+                            await _controller.getFileData(e),
+                            await _controller.getFileMIME(e),
+                            await _controller.getFilename(e),
+                            await _controller.getFileSize(e),
+                          ),
+                        ),
+                      ),
+                    );
+
+                    setState(() => _isDragging = false);
+                  }
+                : null,
           ),
         ),
         InkWell(
