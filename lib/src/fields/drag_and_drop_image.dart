@@ -16,8 +16,13 @@ import 'package:mayo_components/mayo_components.dart';
 ///
 class DropImageInfo {
   ///
-  DropImageInfo(this.url, this.data, this.mime, this.filename, this.size)
-      : extension = filename.contains('.') ? filename.split('.')[1] : '';
+  DropImageInfo(
+    this.url,
+    this.data,
+    this.mime,
+    this.filename,
+    this.size,
+  ) : extension = filename.contains('.') ? filename.split('.')[1] : '';
 
   ///
   /// [@var		final	String]
@@ -83,6 +88,7 @@ class DragAndDropImage extends StatefulWidget {
     this.onUpdateButtonPressed,
     this.onDropImages,
     this.multiple = false,
+    this.acceptedMimeTypes,
     super.key,
   });
 
@@ -147,6 +153,8 @@ class DragAndDropImage extends StatefulWidget {
   ///
   final bool multiple;
 
+  final List<String>? acceptedMimeTypes;
+
   @override
   State<DragAndDropImage> createState() => _DragAndDropImageState();
 }
@@ -202,6 +210,7 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
       children: [
         Positioned.fill(
           child: DropzoneView(
+            mime: widget.acceptedMimeTypes,
             key: key,
             operation: DragOperation.copy,
             cursor: CursorType.grab,

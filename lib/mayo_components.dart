@@ -1,9 +1,8 @@
 ///
 library mayo_components;
 
-export 'package:data_exporter/data_exporter.dart';
-
 export 'src/components/text_read_more.dart';
+export 'src/design_system/design_system.dart';
 export 'src/fields/fields.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';

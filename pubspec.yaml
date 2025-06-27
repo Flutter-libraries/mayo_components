@@ -11,17 +11,18 @@ dependencies:
   audioplayers: ^6.0.0
   cached_network_image: ^3.2.3
   
-  data_exporter:
-    path: ./data_exporter
+  # data_exporter:
+  #   path: ./data_exporter
 
   dotted_decoration: ^2.0.0
   flutter:
     sdk: flutter
   flutter_dropzone: ^4.0.1
   formz: ^0.8.0
+  responsive_framework: ^1.5.1
 
 dev_dependencies:
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  very_good_analysis: ^7.0.0
+  very_good_analysis: ^9.0.0
