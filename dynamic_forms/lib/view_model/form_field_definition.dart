@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
 // Validation Callback
-typedef ValidationCallback = String? Function(
-  BuildContext context, {
-  String? value,
-  String? errorLabel,
-  bool isRequired,
-});
+typedef ValidationCallback =
+    String? Function(
+      BuildContext context, {
+      String? value,
+      String? errorLabel,
+      bool isRequired,
+    });
+
+typedef FormatterCallback<T> = String? Function(T? value);
 
 class DropdownOption {
   DropdownOption({
@@ -65,11 +68,12 @@ class FormFieldDefinition {
     this.options = const [],
     this.prefixIcon,
     this.sectionGroup = 0,
-    this.value,
+
     this.color,
     this.backgroundColor,
     this.rowColumn = false,
     this.previewKey,
+    this.formatter,
   });
   final String fieldName;
   final String label;
@@ -86,21 +90,16 @@ class FormFieldDefinition {
   final IconData? prefixIcon;
   final int sectionGroup;
   final bool rowColumn;
-  // deprecated
-  @Deprecated('Use the data instead')
-  final Comparable<Object>? value;
+
   final Color? color;
   final Color? backgroundColor;
   final String? previewKey;
+
+  final FormatterCallback? formatter;
 }
 
 class FormSection {
-  FormSection({
-    this.group = 0,
-    this.fields,
-    this.title,
-    this.subtitle,
-  });
+  FormSection({this.group = 0, this.fields, this.title, this.subtitle});
   final int group;
   final String? title;
   final String? subtitle;

@@ -4,6 +4,7 @@ library mayo_components;
 export 'src/components/text_read_more.dart';
 export 'src/design_system/design_system.dart';
 export 'src/fields/fields.dart';
+export 'src/helpers/helpers.dart';
 export 'src/layout/basic.dart';
 export 'src/layout/scaffold_responsive.dart';
 export 'src/media/audio_player_widget.dart';

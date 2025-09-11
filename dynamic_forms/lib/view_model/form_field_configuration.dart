@@ -1,33 +1,8 @@
 import 'package:flutter/widgets.dart';
 import '../dynamic_forms.dart';
 
-abstract class FormConfiguration<T> implements Comparable<T> {
-  FormConfiguration({required this.context, required this.model});
-
-  final T model;
-  final BuildContext context;
-
-  @Deprecated('Use `tableColumnsCount` instead')
-  static late int columnCount;
-
-  int get tableColumnsCount => fields.where((f) => f.isListable).length;
-
-  @Deprecated('Use `fields and isListable = true` instead')
-  List<Comparable<Object?>> get listableFields;
-
-  bool contains(String text);
-
-  @Deprecated('Use `fields` instead')
-  List<FormSection> get sections => const [];
-  List<FormFieldDefinition> get fields => const [];
-  T onChange(String field, dynamic value, {bool concatenate = false});
-  U? getValue<U>(String fieldName);
-}
-
 abstract class FormConfiguration2<T> {
-  FormConfiguration2({
-    required this.context,
-  });
+  FormConfiguration2({required this.context});
 
   final BuildContext context;
 
@@ -46,10 +21,7 @@ abstract class FormConfiguration2<T> {
     return remoteOptions[fieldName] ?? [];
   }
 
-  DropdownOption? getOption(
-    String fieldName,
-    String value,
-  ) {
+  DropdownOption? getOption(String fieldName, String value) {
     return getOptions(fieldName).firstWhere(
       (option) => option.value == value,
       orElse: () => DropdownOption(value: value, label: value),
@@ -91,7 +63,8 @@ extension JsonModelExtension<T> on T {
     if (concatenate && current[lastKey] is List) {
       current[lastKey] = [...(current[lastKey] as List), value];
     } else if (current[lastKey] is List && value is List) {
-      current[lastKey] = [...(current[lastKey] as List), ...value];
+      // current[lastKey] = [...(current[lastKey] as List), ...value];
+      current[lastKey] = value;
     } else {
       current[lastKey] = value;
     }
@@ -100,9 +73,7 @@ extension JsonModelExtension<T> on T {
   }
 
   /// Obtiene el valor de un campo del modelo, soportando claves anidadas.
-  U? getValue<U>(
-    String field,
-  ) {
+  U? getValue<U>(String field) {
     final json = (this as dynamic).toJson() as Map<String, dynamic>;
     final keys = field.split('.');
 
@@ -113,16 +84,17 @@ extension JsonModelExtension<T> on T {
       } else {
         return null;
       }
+    }
+
+    if (U.toString() == 'DateTime' && current != null) {
+      return DateTime.tryParse(current) as U?;
     }
 
     return current as U?;
   }
 
   /// Obtiene una lista de valores de un campo del modelo, soportando claves anidadas.
-  List<U>? getListValue<U>(
-    String field,
-    String key,
-  ) {
+  List<U>? getListValue<U>(String field, String key) {
     final json = (this as dynamic).toJson() as Map<String, dynamic>;
     final keys = field.split('.');
 
@@ -134,8 +106,10 @@ extension JsonModelExtension<T> on T {
         return null;
       }
     }
-    if (current is List) {
+    if (current is List<Map<String, dynamic>>) {
       return List<U>.from(current.map((e) => e[key] as U));
+    } else if (current is List<U>) {
+      return current;
     }
     return <U>[];
   }

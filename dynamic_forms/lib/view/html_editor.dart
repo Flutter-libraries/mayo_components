@@ -1,48 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:mayo_components/mayo_components.dart';
-import 'package:quill_html_editor/quill_html_editor.dart';
+import 'package:html_editor_enhanced/html_editor.dart' as html_editor;
 
 class HtmlEditor extends StatefulWidget {
   const HtmlEditor({
     super.key,
     required this.initialValue,
+    required this.height,
     this.hintText,
     required this.enabled,
     this.onTextChanged,
     this.title,
     this.onFocusChanged,
+    this.customButtons = const [],
+    this.onSelectionChanged,
+    required this.controller,
   });
 
   final String initialValue;
   final bool enabled;
   final String? title;
   final String? hintText;
+  final double height;
   final void Function(String text)? onTextChanged;
   final void Function(bool value)? onFocusChanged;
+
+  final List<Widget> customButtons;
+  final void Function(int index, int length)? onSelectionChanged;
+  final html_editor.HtmlEditorController controller;
 
   @override
   State<HtmlEditor> createState() => _HtmlEditorState();
 }
 
 class _HtmlEditorState extends State<HtmlEditor> {
-  final QuillEditorController controller = QuillEditorController();
-
-  final customToolBarList = [
-    ToolBarStyle.bold,
-    ToolBarStyle.italic,
-    ToolBarStyle.align,
-    ToolBarStyle.color,
-    ToolBarStyle.background,
-    ToolBarStyle.listBullet,
-    ToolBarStyle.listOrdered,
-    ToolBarStyle.clean,
-    ToolBarStyle.addTable,
-    ToolBarStyle.editTable,
-  ];
-
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    // La inicialización del texto se maneja en el callback onInit
   }
 
   @override
@@ -52,85 +46,119 @@ class _HtmlEditorState extends State<HtmlEditor> {
       spacing: 16,
       children: [
         if (widget.title != null)
-          Text(
-            widget.title!,
-            style: Theme.of(context).textTheme.titleMedium,
+          Text(widget.title!, style: Theme.of(context).textTheme.titleMedium),
+        html_editor.HtmlEditor(
+          controller: widget.controller,
+          htmlEditorOptions: html_editor.HtmlEditorOptions(
+            hint: widget.hintText ?? 'Escribe aquí...',
+            shouldEnsureVisible: true,
+            autoAdjustHeight: true,
+            //initialText: "<p>text content initial, if any</p>",
           ),
-        OutlinedCard(
-          child: Column(
-            children: [
-              ToolBar(
-                toolBarColor: Theme.of(context).colorScheme.surface,
-                padding: const EdgeInsets.all(8),
-                iconSize: 25,
-                iconColor: Theme.of(context).colorScheme.onSurface,
-                activeIconColor: Theme.of(context).colorScheme.primary,
-                controller: controller,
-                crossAxisAlignment: WrapCrossAlignment.start,
-                direction: Axis.horizontal,
-                customButtons: [
-                  Container(
-                    width: 25,
-                    height: 25,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () async {
-                      var selectedText = await controller.getSelectedText();
-                      debugPrint('selectedText $selectedText');
-                      var selectedHtmlText =
-                          await controller.getSelectedHtmlText();
-                      debugPrint('selectedHtmlText $selectedHtmlText');
-                    },
-                    child: const Icon(
-                      Icons.add_circle,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-              SingleChildScrollView(
-                child: QuillHtmlEditor(
-                  hintText: widget.hintText,
-                  controller: controller,
-                  isEnabled: widget.enabled,
-                  minHeight: 300,
-                  ensureVisible: true,
-                  textStyle: Theme.of(context).textTheme.bodyMedium,
-                  hintTextStyle: Theme.of(context).textTheme.labelMedium,
-                  hintTextAlign: TextAlign.start,
-                  padding: const EdgeInsets.only(left: 10, top: 5),
-                  hintTextPadding: EdgeInsets.zero,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  onFocusChanged: (hasFocus) =>
-                      debugPrint('has focus $hasFocus'),
-                  onTextChanged: (text) => widget.onTextChanged?.call(text),
-                  onEditorCreated: () {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      Future.delayed(
-                        const Duration(milliseconds: 1000),
-                        () => controller.setText(widget.initialValue),
-                      );
-                    });
-                  },
-                  onEditingComplete: (s) => debugPrint('Editing completed $s'),
-                  onEditorResized: (height) =>
-                      debugPrint('Editor resized $height'),
-                  onSelectionChanged: (sel) =>
-                      debugPrint('${sel.index},${sel.length}'),
-                  loadingBuilder: (context) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 0.4,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+          htmlToolbarOptions: html_editor.HtmlToolbarOptions(
+            toolbarPosition:
+                html_editor.ToolbarPosition.aboveEditor, //by default
+            toolbarType: html_editor.ToolbarType.nativeScrollable, //by default
+            customToolbarButtons: widget.customButtons,
+            customToolbarInsertionIndices: widget.customButtons.isNotEmpty
+                ? List.generate(widget.customButtons.length, (index) => index)
+                : [],
+            onButtonPressed:
+                (
+                  html_editor.ButtonType type,
+                  bool? status,
+                  Function? updateStatus,
+                ) {
+                  debugPrint(
+                    "button '${type.name}' pressed, the current selected status is $status",
+                  );
+                  return true;
+                },
+            onDropdownChanged:
+                (
+                  html_editor.DropdownType type,
+                  dynamic changed,
+                  Function(dynamic)? updateSelectedItem,
+                ) {
+                  debugPrint("dropdown '${type.name}' changed to $changed");
+                  return true;
+                },
+            mediaLinkInsertInterceptor:
+                (String url, html_editor.InsertFileType type) {
+                  debugPrint(url);
+                  return true;
+                },
+          ),
+          otherOptions: html_editor.OtherOptions(height: widget.height),
+          callbacks: html_editor.Callbacks(
+            onBeforeCommand: (String? currentHtml) {
+              debugPrint('html before change is $currentHtml');
+            },
+            onChangeContent: (String? changed) {
+              debugPrint('content changed to $changed');
+              widget.onTextChanged?.call(changed ?? '');
+            },
+            onChangeCodeview: (String? changed) {
+              debugPrint('code changed to $changed');
+              widget.onTextChanged?.call(changed ?? '');
+            },
+            onChangeSelection: (html_editor.EditorSettings settings) {
+              debugPrint('parent element is ${settings.parentElement}');
+              debugPrint('font name is ${settings.fontName}');
+              // Simular selectionChanged si tenemos el callback
+              widget.onSelectionChanged?.call(0, 0); // Valores por defecto
+            },
+            onDialogShown: () {
+              debugPrint('dialog shown');
+            },
+            onEnter: () {
+              debugPrint('enter/return pressed');
+            },
+            onFocus: () {
+              debugPrint('editor focused');
+              widget.onFocusChanged?.call(true);
+            },
+            onBlur: () {
+              debugPrint('editor unfocused');
+              widget.onFocusChanged?.call(false);
+            },
+            onBlurCodeview: () {
+              debugPrint('codeview either focused or unfocused');
+            },
+            onInit: () {
+              debugPrint('init');
+              // Establecer el valor inicial cuando el editor esté listo
+              if (widget.initialValue.isNotEmpty) {
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  widget.controller.setText(widget.initialValue);
+                });
+              }
+            },
+            onKeyDown: (int? keyCode) {
+              debugPrint('$keyCode key downed');
+              debugPrint(
+                'current character count: ${widget.controller.characterCount}',
+              );
+            },
+            onKeyUp: (int? keyCode) {
+              debugPrint('$keyCode key released');
+            },
+            onMouseDown: () {
+              debugPrint('mouse downed');
+            },
+            onMouseUp: () {
+              debugPrint('mouse released');
+            },
+            onNavigationRequestMobile: (String url) {
+              debugPrint(url);
+              return html_editor.NavigationActionPolicy.ALLOW;
+            },
+            onPaste: () {
+              debugPrint('pasted into editor');
+            },
+            onScroll: () {
+              debugPrint('editor scrolled');
+            },
           ),
         ),
       ],
