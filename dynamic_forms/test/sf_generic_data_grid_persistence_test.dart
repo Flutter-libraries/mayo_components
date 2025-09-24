@@ -36,21 +36,46 @@ void main() {
       SharedPreferences.setMockInitialValues({});
     });
 
-    testWidgets('restaura valor persistido', (tester) async {
-      SharedPreferences.setMockInitialValues({'global_rows_per_page': 25});
+    Widget _wrapGrid(Widget child) => MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 800,
+                height: 600,
+                child: child,
+              ),
+            ),
+          ),
+        );
 
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) {
+    Future<void> _pumpGrid(
+      WidgetTester tester, {
+      int? mockInitialValue,
+      bool persist = true,
+      int? rowsPerPage,
+    }) async {
+      if (mockInitialValue != null) {
+        SharedPreferences.setMockInitialValues({'global_rows_per_page': mockInitialValue});
+      }
+      await tester.pumpWidget(_wrapGrid(
+        Builder(builder: (context) {
           return SfGenericDataGrid<_Config, _Item>(
             configuration: _Config(context: context),
             items: List.generate(40, (i) => _Item(i, 'Item $i')),
             columnCount: _Config(context: context).columnsCount,
+            persistRowsPerPage: persist,
+            rowsPerPage: rowsPerPage ?? 10,
           );
         }),
       ));
-
-      // Primer frame + post frame callback
+      // Primer frame
       await tester.pump();
+      // Post frame callback + async SharedPreferences
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    testWidgets('restaura valor persistido', (tester) async {
+      await _pumpGrid(tester, mockInitialValue: 25);
 
       // Verifica que el Dropdown muestra 25
       final dropdown = tester.widget<DropdownButton<int>>(find.byType(DropdownButton<int>));
@@ -58,17 +83,7 @@ void main() {
     });
 
     testWidgets('cambia y persiste nuevo valor', (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) {
-          return SfGenericDataGrid<_Config, _Item>(
-            configuration: _Config(context: context),
-            items: List.generate(40, (i) => _Item(i, 'Item $i')),
-            columnCount: _Config(context: context).columnsCount,
-          );
-        }),
-      ));
-
-      await tester.pump();
+      await _pumpGrid(tester);
 
       // Abre el dropdown y selecciona 25
       await tester.tap(find.byType(DropdownButton<int>));
@@ -81,34 +96,13 @@ void main() {
       expect(dropdown.value, 25);
 
       // Ahora simula reconstrucción (nuevo widget) y que restaura 25
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) {
-          return SfGenericDataGrid<_Config, _Item>(
-            configuration: _Config(context: context),
-            items: List.generate(40, (i) => _Item(i, 'Item $i')),
-            columnCount: _Config(context: context).columnsCount,
-          );
-        }),
-      ));
-      await tester.pump();
+      await _pumpGrid(tester);
       dropdown = tester.widget(find.byType(DropdownButton<int>));
       expect(dropdown.value, 25);
     });
 
     testWidgets('desactivado no persiste', (tester) async {
-      SharedPreferences.setMockInitialValues({'global_rows_per_page': 50});
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) {
-          return SfGenericDataGrid<_Config, _Item>(
-            configuration: _Config(context: context),
-            items: List.generate(40, (i) => _Item(i, 'Item $i')),
-            columnCount: _Config(context: context).columnsCount,
-            persistRowsPerPage: false,
-            rowsPerPage: 10,
-          );
-        }),
-      ));
-      await tester.pump();
+      await _pumpGrid(tester, mockInitialValue: 50, persist: false, rowsPerPage: 10);
 
       final dropdown = tester.widget<DropdownButton<int>>(find.byType(DropdownButton<int>));
       expect(dropdown.value, 10); // Ignora preferencia porque está desactivado
