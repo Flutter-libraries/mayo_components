@@ -17,6 +17,10 @@ dependencies:
   
   responsive_framework: ^1.5.1
 
+  syncfusion_flutter_datagrid: ^31.1.18
+  syncfusion_flutter_core: ^31.1.18
+  shared_preferences: ^2.2.3
+
   mayo_components:
     path: ../
 
