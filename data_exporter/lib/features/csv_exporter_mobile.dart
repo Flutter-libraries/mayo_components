@@ -6,7 +6,7 @@ import 'csv_exporter.dart';
 
 class CSVExporter implements Exporter {
   @override
-  Future<void> export(String filename, List<List<String>> dataList) async {
+  Future<void> export(String filename, List<List<String>> dataList, {bool landscape = false}) async {
     try {
 
       final data = listToCsv(dataList);

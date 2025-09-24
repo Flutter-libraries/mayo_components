@@ -24,7 +24,7 @@ class GenericPaginatedDataTable<
     this.showEmptyRows = false,
     this.rowsMin = false,
     this.availableRowsPerPage = const [10, 25, 50, 100],
-    this.maxColumnWidth = 100.0,
+    this.maxColumnWidth = 20.0,
     this.maxActionColumnWidth = 80.0,
     this.initialSortColumn = 0,
     this.initialSortAscending = true,

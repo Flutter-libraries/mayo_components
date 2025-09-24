@@ -34,7 +34,7 @@ class FilledCard extends StatelessWidget {
           border: Border.all(
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          color: color ?? Theme.of(context).colorScheme.surfaceContainerLowest,
+          color: color ?? Theme.of(context).colorScheme.surfaceContainer,
         ),
         child: child,
       ),
