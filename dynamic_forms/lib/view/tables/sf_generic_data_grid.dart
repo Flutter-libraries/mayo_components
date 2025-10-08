@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
 
-enum _SfRowAction { edit, remove }
-
 class SfGenericDataGrid<T extends FormConfiguration2<S>,
     S extends ListableModel<S>> extends StatefulWidget {
   const SfGenericDataGrid({
@@ -13,19 +11,22 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
     required this.configuration,
     required this.items,
     required this.columnCount,
+    this.selectedItems,
     this.columns,
     this.onEditItemTap,
     this.onRemoveItemTap,
     this.customRowAction,
+    this.rowMenuActions,
     this.rowBuilder,
     this.toolbarActions,
     this.setSelectedItems,
+    this.actionsColumnName,
     this.rowsPerPage = 10,
     this.availableRowsPerPage = const [10, 25, 50, 100],
     this.showSearchField = true,
     this.allowSorting = true,
     this.allowMultiSelection = true,
-  this.allowRowSelection = true,
+    this.allowRowSelection = true,
     this.columnWidthMode = ColumnWidthMode.fill,
     this.columnWidths,
     this.headerBackgroundColor,
@@ -41,28 +42,39 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
     this.expanded = true,
     this.persistRowsPerPage = true,
     this.preferenceKey,
+    this.showPager = true,
   });
 
   final T configuration;
   final List<S> items;
   final int columnCount;
+  /// Lista opcional de ítems que deben aparecer seleccionados al inicio
+  /// (pre-selección). No fuerza selección controlada continua; se usa para
+  /// inicializar el estado interno cuando cambia.
+  final List<S>? selectedItems;
   final List<GridColumn>? columns;
 
   final void Function(S item)? onEditItemTap;
   final void Function(S item)? onRemoveItemTap;
   final Widget Function(S item)? customRowAction;
+  // Acciones adicionales para el menú contextual de la última columna.
+  final List<RowMenuAction<S>>? rowMenuActions;
   // Permite personalizar el contenido de las celdas de cada fila.
   // Debe devolver tantos widgets como columnas listables haya en configuration.
   final List<Widget> Function(S data)? rowBuilder;
 
   final List<Widget>? toolbarActions;
   final void Function(List<S> items)? setSelectedItems;
+  /// Nombre opcional para la columna de acciones. Si no se especifica,
+  /// la columna no tendrá header visible.
+  final String? actionsColumnName;
 
   final int rowsPerPage;
   final List<int> availableRowsPerPage;
   final bool showSearchField;
   final bool allowSorting;
   final bool allowMultiSelection;
+
   /// Si es false, se desactiva completamente la selección de filas (no highlight ni checkboxes).
   final bool allowRowSelection;
   final ColumnWidthMode columnWidthMode;
@@ -84,12 +96,16 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
   // Si true, el grid se expande para ocupar el espacio disponible.
   // Si false, el grid no se envuelve en Expanded (el contenedor padre debe aportar las constraints necesarias).
   final bool expanded;
+
   /// Si es true (por defecto) se persiste el número de filas por página usando
   /// SharedPreferences para que se reaplique en todas las tablas.
   final bool persistRowsPerPage;
+
   /// Clave opcional para aislar persistencia entre distintos tipos de tablas.
   /// Si no se especifica se usa una clave genérica global.
   final String? preferenceKey;
+
+  final bool showPager;
 
   @override
   State<SfGenericDataGrid<T, S>> createState() =>
@@ -112,6 +128,13 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     super.initState();
     _rowsPerPage = widget.rowsPerPage;
     _allItems = widget.items;
+    // Pre-selección externa inicial
+    if (widget.selectedItems != null && widget.selectedItems!.isNotEmpty) {
+      _selected.clear();
+      for (final s in widget.selectedItems!) {
+        if (!_selected.contains(s)) _selected.add(s);
+      }
+    }
     if (widget.persistRowsPerPage) {
       _restoreRowsPerPagePreference();
     }
@@ -122,6 +145,7 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
       onEditItemTap: widget.onEditItemTap,
       onRemoveItemTap: widget.onRemoveItemTap,
       customRowAction: widget.customRowAction,
+      rowMenuActions: widget.rowMenuActions,
       rowBuilder: widget.rowBuilder,
       rowTextStyle: widget.rowTextStyle,
       showSelectionColumn:
@@ -148,6 +172,7 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
       },
     );
   }
+
   void _restoreRowsPerPagePreference() {
     final key = widget.preferenceKey ?? 'global_rows_per_page';
     // Cargamos async tras primer frame para no bloquear initState.
@@ -155,7 +180,9 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
       try {
         final prefs = await SharedPreferences.getInstance();
         final stored = prefs.getInt(key);
-        if (stored != null && stored != _rowsPerPage && widget.availableRowsPerPage.contains(stored)) {
+        if (stored != null &&
+            stored != _rowsPerPage &&
+            widget.availableRowsPerPage.contains(stored)) {
           setState(() {
             _rowsPerPage = stored;
             dataSource.updatePageSize(_rowsPerPage);
@@ -184,10 +211,22 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     if (oldWidget.rowBuilder != widget.rowBuilder) {
       dataSource.setRowBuilder(widget.rowBuilder);
     }
+    if (oldWidget.rowMenuActions != widget.rowMenuActions) {
+      dataSource.setRowMenuActions(widget.rowMenuActions);
+    }
     if (oldWidget.items != widget.items ||
         oldWidget.configuration != widget.configuration) {
       _allItems = widget.items;
       _applyFilter(_searchQuery);
+    }
+    // Sincronizar pre-selección externa si cambia la referencia de la lista
+    if (oldWidget.selectedItems != widget.selectedItems) {
+      _selected.clear();
+      if (widget.selectedItems != null) {
+        _selected.addAll(widget.selectedItems!);
+      }
+      dataSource.notifySelectionChanged();
+      widget.setSelectedItems?.call(List<S>.unmodifiable(_selected));
     }
     if ((oldWidget.setSelectedItems != null) !=
         (widget.setSelectedItems != null)) {
@@ -267,146 +306,146 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     // Construimos el grid una vez y lo envolvemos condicionalmente en Expanded cuando hay datos.
     children.add(
       (() {
-          final gridChild = Builder(
-            builder: (context) {
-              Widget grid = SfDataGrid(
-                source: dataSource,
-                controller: _controller,
-                allowSorting: widget.allowSorting,
-                selectionMode: widget.allowRowSelection
-                    ? (widget.allowMultiSelection
-                        ? SelectionMode.multiple
-                        : SelectionMode.single)
-                    : SelectionMode.none,
-                columnWidthMode: widget.columnWidthMode,
-                columns: columns,
-                onSelectionChanged: (added, removed) {
-                  if (!widget.allowRowSelection) return;
-                  // Actualiza la lista acumulada en base a filas añadidas/eliminadas
-                  List<S> mapRows(List<DataGridRow> rows) => rows
-                      .map((r) => (r
-                          .getCells()
-                          .firstWhere((c) => c.columnName == '__index__')
-                          .value) as S)
-                      .toList();
-                  final addedItems = mapRows(added);
-                  final removedItems = mapRows(removed);
+        final gridChild = Builder(
+          builder: (context) {
+            Widget grid = SfDataGrid(
+              source: dataSource,
+              controller: _controller,
+              allowSorting: widget.allowSorting,
+              selectionMode: widget.allowRowSelection
+                  ? (widget.allowMultiSelection
+                      ? SelectionMode.multiple
+                      : SelectionMode.single)
+                  : SelectionMode.none,
+              columnWidthMode: widget.columnWidthMode,
+              columns: columns,
+              onSelectionChanged: (added, removed) {
+                if (!widget.allowRowSelection) return;
+                // Actualiza la lista acumulada en base a filas añadidas/eliminadas
+                List<S> mapRows(List<DataGridRow> rows) => rows
+                    .map((r) => (r
+                        .getCells()
+                        .firstWhere((c) => c.columnName == '__index__')
+                        .value) as S)
+                    .toList();
+                final addedItems = mapRows(added);
+                final removedItems = mapRows(removed);
 
-                  setState(() {
-                    for (final it in addedItems) {
-                      if (!_selected.contains(it)) _selected.add(it);
-                    }
-                    for (final it in removedItems) {
-                      _selected.remove(it);
-                    }
-                  });
-                  widget.setSelectedItems
-                      ?.call(List<S>.unmodifiable(_selected));
-                  // Fuerza refresco para que los checkboxes reflejen el highlight manual
-                  dataSource.notifySelectionChanged();
-                },
-              );
-              // Aplica tema de grid si hay colores definidos
-              final hasGridTheme = headerBg != null ||
-                  gridLine != null ||
-                  selection != null ||
-                  hover != null;
-              if (hasGridTheme) {
-                grid = SfDataGridTheme(
-                  data: SfDataGridThemeData(
-                    headerColor: headerBg,
-                    gridLineColor: gridLine,
-                    selectionColor: selection,
-                    rowHoverColor: hover,
-                  ),
-                  child: grid,
-                );
-              }
-              return grid;
-            },
-          );
-          // Si se especifica una altura máxima, envolvemos en ConstrainedBox
-          // y evitamos Expanded para respetar la restricción.
-          Widget result = gridChild;
-          if (widget.maxHeight != null) {
-            result = ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: widget.maxHeight!),
-              child: result,
+                setState(() {
+                  for (final it in addedItems) {
+                    if (!_selected.contains(it)) _selected.add(it);
+                  }
+                  for (final it in removedItems) {
+                    _selected.remove(it);
+                  }
+                });
+                widget.setSelectedItems?.call(List<S>.unmodifiable(_selected));
+                // Fuerza refresco para que los checkboxes reflejen el highlight manual
+                dataSource.notifySelectionChanged();
+              },
             );
-            return result; // No usar Expanded si hay maxHeight
-          }
-          return widget.expanded ? Expanded(child: result) : result;
-        })(),
+            // Aplica tema de grid si hay colores definidos
+            final hasGridTheme = headerBg != null ||
+                gridLine != null ||
+                selection != null ||
+                hover != null;
+            if (hasGridTheme) {
+              grid = SfDataGridTheme(
+                data: SfDataGridThemeData(
+                  headerColor: headerBg,
+                  gridLineColor: gridLine,
+                  selectionColor: selection,
+                  rowHoverColor: hover,
+                ),
+                child: grid,
+              );
+            }
+            return grid;
+          },
+        );
+        // Si se especifica una altura máxima, envolvemos en ConstrainedBox
+        // y evitamos Expanded para respetar la restricción.
+        Widget result = gridChild;
+        if (widget.maxHeight != null) {
+          result = ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: widget.maxHeight!),
+            child: result,
+          );
+          return result; // No usar Expanded si hay maxHeight
+        }
+        return widget.expanded ? Expanded(child: result) : result;
+      })(),
     );
-    if (widget.items.isNotEmpty) {
+    if (widget.items.isNotEmpty && widget.showPager) {
       children.add(
         Container(
-            height: 56,
-            decoration: BoxDecoration(
-              color: footerBg,
-              border: Border(
-                top: BorderSide(
-                  color: (gridLine ?? Theme.of(context).dividerColor)
-                      .withValues(alpha: 0.6),
-                  width: 0.5,
-                ),
+          // height: 56,
+          decoration: BoxDecoration(
+            color: footerBg,
+            border: Border(
+              top: BorderSide(
+                color: (gridLine ?? Theme.of(context).dividerColor)
+                    .withValues(alpha: 0.6),
+                width: 0.5,
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                // Selector de filas por página
-                Text(
-                  'Filas por página:',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(width: 8),
-                DropdownButton<int>(
-                  value: _rowsPerPage,
-                  items: widget.availableRowsPerPage
-                      .map((v) => DropdownMenuItem<int>(
-                            value: v,
-                            child: Text(
-                              '$v',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ))
-                      .toList(),
-                  onChanged: (v) {
-                    if (v == null || v == _rowsPerPage) return;
-                    setState(() {
-                      _rowsPerPage = v;
-                      dataSource.updatePageSize(v);
-                    });
-                    _persistRowsPerPage(v);
-                  },
-                ),
-                const Spacer(),
-                // Paginador
-                Builder(
-                  builder: (context) {
-                    Widget pager = SfDataPager(
-                      delegate: dataSource,
-                      pageCount:
-                          (dataSource.rowCount / _rowsPerPage).ceilToDouble(),
-                    );
-                    final hasPagerTheme =
-                        pagerItem != null || pagerSelected != null;
-                    if (hasPagerTheme) {
-                      pager = SfDataPagerTheme(
-                        data: SfDataPagerThemeData(
-                          itemColor: pagerItem,
-                          selectedItemColor: pagerSelected,
-                        ),
-                        child: pager,
-                      );
-                    }
-                    return pager;
-                  },
-                ),
-              ],
-            ),
           ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              // Selector de filas por página
+              Text(
+                'Filas por página:',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<int>(
+                value: _rowsPerPage,
+                items: widget.availableRowsPerPage
+                    .map((v) => DropdownMenuItem<int>(
+                          value: v,
+                          child: Text(
+                            '$v',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v == null || v == _rowsPerPage) return;
+                  setState(() {
+                    _rowsPerPage = v;
+                    dataSource.updatePageSize(v);
+                  });
+                  _persistRowsPerPage(v);
+                },
+              ),
+              const Spacer(),
+              
+              // Paginador
+              Builder(
+                builder: (context) {
+                  Widget pager = SfDataPager(
+                    delegate: dataSource,
+                    pageCount:
+                        (dataSource.rowCount / _rowsPerPage).ceilToDouble(),
+                  );
+                  final hasPagerTheme =
+                      pagerItem != null || pagerSelected != null;
+                  if (hasPagerTheme) {
+                    pager = SfDataPagerTheme(
+                      data: SfDataPagerThemeData(
+                        itemColor: pagerItem,
+                        selectedItemColor: pagerSelected,
+                      ),
+                      child: pager,
+                    );
+                  }
+                  return pager;
+                },
+              ),
+            ],
+          ),
+        ),
       );
     }
     return Column(children: children);
@@ -503,21 +542,55 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
 
     if (widget.onEditItemTap != null ||
         widget.onRemoveItemTap != null ||
-        widget.customRowAction != null) {
+        widget.customRowAction != null ||
+        (widget.rowMenuActions != null && widget.rowMenuActions!.isNotEmpty)) {
       // Si hay customRowAction, necesitamos más ancho para evitar desbordes.
       final actionsWidthOverride = widget.columnWidths?['__actions__'];
-      final defaultActionsWidth = widget.customRowAction != null ? 120.0 : 80.0;
+      final hasMenu =
+          widget.rowMenuActions != null && widget.rowMenuActions!.isNotEmpty;
+      final defaultActionsWidth =
+          widget.customRowAction != null || hasMenu ? 140.0 : 80.0;
       cols.add(
         GridColumn(
           columnName: '__actions__',
           width: actionsWidthOverride ?? defaultActionsWidth,
           allowSorting: false,
-          label: const SizedBox.shrink(),
+          label: widget.actionsColumnName != null 
+              ? labeler(widget.actionsColumnName!)
+              : const SizedBox.shrink(),
         ),
       );
     }
     return cols;
   }
+}
+
+/// Representa una acción que se muestra dentro del menú contextual (PopupMenu)
+/// de cada fila en la columna de acciones.
+class RowMenuAction<S> {
+  const RowMenuAction({
+    required this.icon,
+    this.label,
+    this.labelBuilder,
+    required this.onTap,
+    this.enabled = true,
+    this.enabledBuilder,
+  }) : assert(label != null || labelBuilder != null,
+            'Debes proporcionar label o labelBuilder');
+  final IconData icon;
+
+  /// Etiqueta estática. Si se necesita dinámica usar [labelBuilder].
+  final String? label;
+
+  /// Función para generar la etiqueta a partir del item de la fila.
+  final String Function(S item)? labelBuilder;
+  final void Function(S item) onTap;
+
+  /// Enabled estático. Para lógica por fila usar [enabledBuilder].
+  final bool enabled;
+
+  /// Permite habilitar/deshabilitar por fila.
+  final bool Function(S item)? enabledBuilder;
 }
 
 class _SfGenericDataSource<T extends FormConfiguration2<U>,
@@ -529,6 +602,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     this.onEditItemTap,
     this.onRemoveItemTap,
     this.customRowAction,
+    this.rowMenuActions,
     this.rowBuilder,
     this.rowTextStyle,
     this.showSelectionColumn = false,
@@ -555,6 +629,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
   final void Function(U item)? onEditItemTap;
   final void Function(U item)? onRemoveItemTap;
   final Widget Function(U item)? customRowAction;
+  List<RowMenuAction<U>>? rowMenuActions;
   List<Widget> Function(U data)? rowBuilder;
   final TextStyle? rowTextStyle;
   bool showSelectionColumn;
@@ -635,7 +710,8 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
         }),
         if (onEditItemTap != null ||
             onRemoveItemTap != null ||
-            customRowAction != null)
+            customRowAction != null ||
+            (rowMenuActions != null && rowMenuActions!.isNotEmpty))
           DataGridCell<String>(columnName: '__actions__', value: ''),
       ];
       return DataGridRow(cells: cells);
@@ -655,7 +731,6 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     onSyncSelection!(selectedRows);
   }
 
-  @override
   @override
   Future<void> sort() async {
     if (sortedColumns.isEmpty) return;
@@ -691,17 +766,17 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
   @override
   DataGridRowAdapter buildRow(DataGridRow row) {
     final fields = configuration.fields.where((f) => f.isListable).toList();
-    int index = 0;
+    int index = 0; // Se usa para mapear columnas listables
     // Obtiene el item real para que rowBuilder pueda usarlo si está definido.
     final U item = row
         .getCells()
         .firstWhere((c) => c.columnName == '__index__')
         .value as U;
-    final customCells = rowBuilder?.call(item);
-    final canUseCustom =
+    final customCells = rowBuilder?.call(item); 
+    final bool canUseCustom =
         customCells != null && customCells.length == fields.length;
     return DataGridRowAdapter(
-      cells: row.getCells().map((cell) {
+      cells: row.getCells().map<Widget>((cell) {
         final name = cell.columnName;
         if (name == '__index__') {
           return const SizedBox.shrink();
@@ -720,54 +795,122 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
           );
         }
         if (name == '__actions__') {
+          final item = row
+              .getCells()
+              .firstWhere((c) => c.columnName == '__index__')
+              .value as U;
           final hasEdit = onEditItemTap != null;
           final hasRemove = onRemoveItemTap != null;
+          final hasCustom = customRowAction != null;
+          final hasExtraMenuActions =
+              rowMenuActions != null && rowMenuActions!.isNotEmpty;
+          final showPopup = hasEdit || hasRemove || hasExtraMenuActions;
 
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              PopupMenuButton<_SfRowAction>(
-                icon: const Icon(Icons.more_vert),
-                onSelected: (action) {
-                  switch (action) {
-                    case _SfRowAction.edit:
-                      if (hasEdit) onEditItemTap!.call(item);
-                      break;
-                    case _SfRowAction.remove:
-                      if (hasRemove) onRemoveItemTap!.call(item);
-                      break;
+          final children = <Widget>[];
+          if (hasCustom) {
+            children.add(customRowAction!(item));
+          }
+          if (showPopup) {
+            // Construimos lista combinada: primero Edit, luego Remove, luego acciones dinámicas existentes.
+            children.add(
+              PopupMenuButton<int>(
+                icon: const Icon(Icons.more_vert, size: 18),
+                onSelected: (index) {
+                  int cursor = 0;
+                  // Edit
+                  if (hasEdit) {
+                    if (index == cursor) {
+                      onEditItemTap?.call(item);
+                      return;
+                    }
+                    cursor++;
+                  }
+                  // Remove
+                  if (hasRemove) {
+                    if (index == cursor) {
+                      onRemoveItemTap?.call(item);
+                      return;
+                    }
+                    cursor++;
+                  }
+                  // Resto de acciones configuradas
+                  if (hasExtraMenuActions) {
+                    final rmIndex = index - cursor; // índice relativo en rowMenuActions
+                    if (rmIndex >= 0 && rmIndex < rowMenuActions!.length) {
+                      final action = rowMenuActions![rmIndex];
+                      final enabled = action.enabledBuilder != null
+                          ? action.enabledBuilder!(item)
+                          : action.enabled;
+                      if (enabled) action.onTap(item);
+                    }
                   }
                 },
-                itemBuilder: (context) => [
-                  if (hasEdit)
-                    PopupMenuItem<_SfRowAction>(
-                      value: _SfRowAction.edit,
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Editar'),
-                        ],
+                itemBuilder: (context) {
+                  final entries = <PopupMenuEntry<int>>[];
+                  int nextIndex = 0;
+                  if (hasEdit) {
+                    entries.add(
+                      PopupMenuItem<int>(
+                        value: nextIndex++,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.edit, size: 18),
+                            SizedBox(width: 8),
+                            Flexible(child: Text('Edit')),
+                          ],
+                        ),
                       ),
-                    ),
-                  if (hasRemove)
-                    PopupMenuItem<_SfRowAction>(
-                      value: _SfRowAction.remove,
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline, size: 18),
-                          SizedBox(width: 8),
-                          Text('Eliminar'),
-                        ],
+                    );
+                  }
+                  if (hasRemove) {
+                    entries.add(
+                      PopupMenuItem<int>(
+                        value: nextIndex++,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.delete_outline, size: 18),
+                            SizedBox(width: 8),
+                            Flexible(child: Text('Remove')),
+                          ],
+                        ),
                       ),
-                    ),
-                ],
+                    );
+                  }
+                  if (hasExtraMenuActions) {
+                    for (var i = 0; i < rowMenuActions!.length; i++) {
+                      final action = rowMenuActions![i];
+                      final enabled = action.enabledBuilder != null
+                          ? action.enabledBuilder!(item)
+                          : action.enabled;
+                      final text = action.labelBuilder != null
+                          ? action.labelBuilder!(item)
+                          : (action.label ?? '');
+                      entries.add(
+                        PopupMenuItem<int>(
+                          enabled: enabled,
+                          value: nextIndex++,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(action.icon, size: 18),
+                              const SizedBox(width: 8),
+                              Flexible(child: Text(text)),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                  return entries;
+                },
               ),
-              if (customRowAction != null) ...[
-                const SizedBox(width: 4),
-                customRowAction!(item),
-              ],
-            ],
+            );
+          }
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
           );
         }
 
@@ -807,11 +950,20 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
               // Si la opción define color/fondo, tiene prioridad
               cellTextColor = opt.color ?? cellTextColor;
               cellBackgroundColor = opt.backgroundColor ?? cellBackgroundColor;
-              return opt.label;
+              final localized = opt.label.isNotEmpty ? opt.label : (v ?? '');
+              return localized;
             case FieldType.dropdownMultiple:
               final v = cell.value as List<String>?;
-              // Para múltiples mostramos texto plano; colores a nivel de campo
-              return v?.join(', ') ?? '';
+              if (v == null || v.isEmpty) return '';
+              // Mapear cada valor a su DropdownOption para obtener el label localizado.
+              final mappedLabels = v.map((val) {
+                final opt = field.options.firstWhere(
+                  (o) => o.value == val,
+                  orElse: () => DropdownOption(label: val, value: val),
+                );
+                return opt.label;
+              }).toList();
+              return mappedLabels.join(', ');
             default:
               return (cell.value as String?) ?? '';
           }
@@ -918,5 +1070,12 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     _buildRows();
     notifyListeners();
     _syncControllerSelection();
+  }
+
+  void setRowMenuActions(List<RowMenuAction<U>>? actions) {
+    if (rowMenuActions == actions) return;
+    rowMenuActions = actions;
+    _buildRows();
+    notifyListeners();
   }
 }
