@@ -48,6 +48,7 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
   final T configuration;
   final List<S> items;
   final int columnCount;
+
   /// Lista opcional de ítems que deben aparecer seleccionados al inicio
   /// (pre-selección). No fuerza selección controlada continua; se usa para
   /// inicializar el estado interno cuando cambia.
@@ -65,6 +66,7 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
 
   final List<Widget>? toolbarActions;
   final void Function(List<S> items)? setSelectedItems;
+
   /// Nombre opcional para la columna de acciones. Si no se especifica,
   /// la columna no tendrá header visible.
   final String? actionsColumnName;
@@ -420,7 +422,7 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
                 },
               ),
               const Spacer(),
-              
+
               // Paginador
               Builder(
                 builder: (context) {
@@ -546,16 +548,15 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
         (widget.rowMenuActions != null && widget.rowMenuActions!.isNotEmpty)) {
       // Si hay customRowAction, necesitamos más ancho para evitar desbordes.
       final actionsWidthOverride = widget.columnWidths?['__actions__'];
-      final hasMenu =
-          widget.rowMenuActions != null && widget.rowMenuActions!.isNotEmpty;
-      final defaultActionsWidth =
-          widget.customRowAction != null || hasMenu ? 140.0 : 80.0;
+      // final hasMenu =
+      //     widget.rowMenuActions != null && widget.rowMenuActions!.isNotEmpty;
+      final defaultActionsWidth = 80.0;
       cols.add(
         GridColumn(
           columnName: '__actions__',
           width: actionsWidthOverride ?? defaultActionsWidth,
           allowSorting: false,
-          label: widget.actionsColumnName != null 
+          label: widget.actionsColumnName != null
               ? labeler(widget.actionsColumnName!)
               : const SizedBox.shrink(),
         ),
@@ -772,7 +773,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
         .getCells()
         .firstWhere((c) => c.columnName == '__index__')
         .value as U;
-    final customCells = rowBuilder?.call(item); 
+    final customCells = rowBuilder?.call(item);
     final bool canUseCustom =
         customCells != null && customCells.length == fields.length;
     return DataGridRowAdapter(
@@ -835,7 +836,8 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
                   }
                   // Resto de acciones configuradas
                   if (hasExtraMenuActions) {
-                    final rmIndex = index - cursor; // índice relativo en rowMenuActions
+                    final rmIndex =
+                        index - cursor; // índice relativo en rowMenuActions
                     if (rmIndex >= 0 && rmIndex < rowMenuActions!.length) {
                       final action = rowMenuActions![rmIndex];
                       final enabled = action.enabledBuilder != null
@@ -956,14 +958,13 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
               final v = cell.value as List<String>?;
               if (v == null || v.isEmpty) return '';
               // Mapear cada valor a su DropdownOption para obtener el label localizado.
-              final mappedLabels = v.map((val) {
-                final opt = field.options.firstWhere(
+              final mappedOptions = v.map((val) {
+                return field.options.firstWhere(
                   (o) => o.value == val,
                   orElse: () => DropdownOption(label: val, value: val),
                 );
-                return opt.label;
               }).toList();
-              return mappedLabels.join(', ');
+              return mappedOptions.join(', ');
             default:
               return (cell.value as String?) ?? '';
           }
@@ -981,6 +982,46 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
               final effectiveStyle = (baseStyle ?? const TextStyle()).copyWith(
                 color: cellTextColor ?? baseStyle?.color,
               );
+
+              // Caso especial para dropdownMultiple con iconos
+              if (field.fieldType == FieldType.dropdownMultiple) {
+                final v = cell.value as List<String>?;
+                if (v != null && v.isNotEmpty) {
+                  final mappedOptions = v.map((val) {
+                    return field.options.firstWhere(
+                      (o) => o.value == val,
+                      orElse: () => DropdownOption(label: val, value: val),
+                    );
+                  }).toList();
+                  
+                  return Wrap(
+                    spacing: 4,
+                    runSpacing: 2,
+                    children: mappedOptions.map((opt) {
+                      return Chip(
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        labelPadding: EdgeInsets.zero,
+                        avatar: opt.emoji != null ? Text(
+                          opt.emoji!,
+                          style: const TextStyle(fontSize: 14),
+                        ) : opt.icon != null ? Icon(
+                          opt.icon,
+                          size: 14,
+                          color: effectiveStyle.color,
+                        ) : null,
+                        label: Text(
+                          opt.label,
+                          style: effectiveStyle.copyWith(fontSize: 12),
+                        ),
+                        backgroundColor: opt.backgroundColor ?? cellBackgroundColor,
+                        side: BorderSide.none,
+                      );
+                    }).toList(),
+                  );
+                }
+              }
 
               final bool showChip =
                   leadingIcon != null && cellBackgroundColor != null;

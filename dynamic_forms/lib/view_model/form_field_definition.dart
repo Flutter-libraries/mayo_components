@@ -17,11 +17,15 @@ class DropdownOption {
     required this.value,
     this.color,
     this.backgroundColor,
+    this.icon,
+    this.emoji,
   });
   final String label;
   final String value;
   final Color? color;
   final Color? backgroundColor;
+  final IconData? icon;
+  final String? emoji;
 }
 
 enum FieldType {

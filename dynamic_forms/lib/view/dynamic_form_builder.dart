@@ -372,7 +372,26 @@ class _DynamicFormBuilder2State<
                             }
                           }
                         : null,
-                    child: Text(option.label),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (option.emoji != null) ...[
+                          Text(
+                            option.emoji!,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(width: 8),
+                        ] else if (option.icon != null) ...[
+                          Icon(
+                            option.icon,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(option.label),
+                      ],
+                    ),
                   );
                 }).toList(),
               ),
