@@ -86,7 +86,7 @@ extension JsonModelExtension<T> on T {
       }
     }
 
-    if (U.toString() == 'DateTime' && current != null) {
+    if ((U == DateTime || U == _typeOf<DateTime?>()) && current != null) {
       return DateTime.tryParse(current) as U?;
     }
 
@@ -114,3 +114,5 @@ extension JsonModelExtension<T> on T {
     return <U>[];
   }
 }
+
+Type _typeOf<T>() => T;

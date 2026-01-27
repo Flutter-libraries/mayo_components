@@ -7,11 +7,8 @@ import 'package:mayo_components/mayo_components.dart';
 
 import 'package:responsive_framework/responsive_framework.dart';
 
-class DynamicFormBuilder2<
-  T extends FormConfiguration2<U>,
-  U extends ListableModel<U>
->
-    extends StatefulWidget {
+class DynamicFormBuilder2<T extends FormConfiguration2<U>,
+    U extends ListableModel<U>> extends StatefulWidget {
   const DynamicFormBuilder2({
     required this.item,
     required this.formConfiguration,
@@ -45,11 +42,8 @@ class DynamicFormBuilder2<
       _DynamicFormBuilder2State<T, U>();
 }
 
-class _DynamicFormBuilder2State<
-  T extends FormConfiguration2<U>,
-  U extends ListableModel<U>
->
-    extends State<DynamicFormBuilder2<T, U>> {
+class _DynamicFormBuilder2State<T extends FormConfiguration2<U>,
+    U extends ListableModel<U>> extends State<DynamicFormBuilder2<T, U>> {
   late U item;
 
   @override
@@ -110,8 +104,7 @@ class _DynamicFormBuilder2State<
                 children: [
                   Text(
                     section.title!,
-                    style:
-                        widget.titleStyle ??
+                    style: widget.titleStyle ??
                         Theme.of(context).textTheme.headlineSmall,
                   ),
                   form,
@@ -137,6 +130,7 @@ class _DynamicFormBuilder2State<
           enabled: widget.enabled,
           decoration: InputDecoration(
             labelText: fieldConfig.label,
+            helperMaxLines: 3,
             helperText: fieldConfig.description,
             prefixIcon: fieldConfig.prefixIcon != null
                 ? Icon(
@@ -148,17 +142,26 @@ class _DynamicFormBuilder2State<
           ),
           textInputAction: TextInputAction.next,
           keyboardType: fieldConfig.fieldType == FieldType.number
-              ? TextInputType.number
+              ? TextInputType.numberWithOptions(
+                  decimal: fieldConfig.allowDecimals,
+                  signed: fieldConfig.allowNegative,
+                )
               : TextInputType.text,
           inputFormatters: fieldConfig.fieldType == FieldType.number
-              ? [FilteringTextInputFormatter.digitsOnly]
+              ? [
+                  FilteringTextInputFormatter.allow(
+                    RegExp(
+                      '^${fieldConfig.allowNegative ? '-?' : ''}[0-9]*${fieldConfig.allowDecimals ? '\\.?[0-9]*' : ''}\$',
+                    ),
+                  ),
+                ]
               : [],
           validator: fieldConfig.validator != null
               ? (value) => fieldConfig.validator!(
-                  context,
-                  isRequired: fieldConfig.isRequired,
-                  value: value,
-                )
+                    context,
+                    isRequired: fieldConfig.isRequired,
+                    value: value,
+                  )
               : null,
           onChanged: (value) => _callback(
             fieldConfig.fieldName,
@@ -239,10 +242,10 @@ class _DynamicFormBuilder2State<
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: fieldConfig.validator != null
               ? (value) => fieldConfig.validator!(
-                  context,
-                  isRequired: fieldConfig.isRequired,
-                  value: value,
-                )
+                    context,
+                    isRequired: fieldConfig.isRequired,
+                    value: value,
+                  )
               : null,
           builder: (fieldstate) => LayoutBuilder(
             builder: (context, constraints) => SizedBox(
@@ -276,18 +279,19 @@ class _DynamicFormBuilder2State<
       case FieldType.dropdownMultiple:
         return FormField<List<String>>(
           initialValue: item
-              .getValue<List<String>>(fieldConfig.fieldName)
+              .getListValue<String>(
+                  fieldConfig.fieldName, fieldConfig.previewKey ?? 'name')
               ?.toSet()
               .toList(),
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: fieldConfig.validator != null
               ? (value) => fieldConfig.validator!(
-                  context,
-                  isRequired: fieldConfig.isRequired,
-                  value: value?.join(
-                    ', ',
-                  ), // Convertir List<String> a String para el validador
-                )
+                    context,
+                    isRequired: fieldConfig.isRequired,
+                    value: value?.join(
+                      ', ',
+                    ), // Convertir List<String> a String para el validador
+                  )
               : null,
           builder: (fieldstate) {
             final selectedValues = fieldstate.value ?? <String>[];
@@ -321,17 +325,17 @@ class _DynamicFormBuilder2State<
                             selectedValues.isEmpty
                                 ? 'Seleccionar opciones'
                                 : selectedValues.length == 1
-                                ? fieldConfig.options
-                                      .firstWhere(
-                                        (opt) =>
-                                            opt.value == selectedValues.first,
-                                        orElse: () => DropdownOption(
-                                          value: selectedValues.first,
-                                          label: selectedValues.first,
-                                        ),
-                                      )
-                                      .label
-                                : '${selectedValues.length} seleccionados',
+                                    ? fieldConfig.options
+                                        .firstWhere(
+                                          (opt) =>
+                                              opt.value == selectedValues.first,
+                                          orElse: () => DropdownOption(
+                                            value: selectedValues.first,
+                                            label: selectedValues.first,
+                                          ),
+                                        )
+                                        .label
+                                    : '${selectedValues.length} seleccionados',
                             style: Theme.of(context).textTheme.bodyLarge,
                           ),
                         ),
@@ -534,10 +538,10 @@ class _DynamicFormBuilder2State<
           autovalidateMode: AutovalidateMode.onUserInteraction,
           validator: fieldConfig.isRequired
               ? (value) => fieldConfig.validator?.call(
-                  context,
-                  isRequired: fieldConfig.isRequired,
-                  value: value,
-                )
+                    context,
+                    isRequired: fieldConfig.isRequired,
+                    value: value,
+                  )
               : null,
           builder: (fieldstate) => GestureDetector(
             behavior: HitTestBehavior.translucent,

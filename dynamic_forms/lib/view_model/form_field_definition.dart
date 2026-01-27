@@ -21,7 +21,7 @@ class DropdownOption {
     this.emoji,
   });
   final String label;
-  final String value;
+  final dynamic value;
   final Color? color;
   final Color? backgroundColor;
   final IconData? icon;
@@ -72,6 +72,8 @@ class FormFieldDefinition {
     this.options = const [],
     this.prefixIcon,
     this.sectionGroup = 0,
+    this.allowNegative = false,
+    this.allowDecimals = false,
 
     this.color,
     this.backgroundColor,
@@ -93,6 +95,8 @@ class FormFieldDefinition {
   final List<DropdownOption> options;
   final IconData? prefixIcon;
   final int sectionGroup;
+  final bool allowNegative;
+  final bool allowDecimals;
   final bool rowColumn;
 
   final Color? color;

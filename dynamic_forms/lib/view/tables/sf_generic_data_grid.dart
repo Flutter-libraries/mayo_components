@@ -1,8 +1,47 @@
+import 'dart:async';
+
 import 'package:dynamic_forms/dynamic_forms.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_datagrid/datagrid.dart';
 import 'package:syncfusion_flutter_core/theme.dart';
+
+enum DataGridSearchMode {
+  /// Default. Filter rows locally based on `contains(query)`.
+  local,
+
+  /// No local filtering. Only `onSearchChanged` is called.
+  /// Useful when filtering happens on the server.
+  external,
+}
+
+class ServerPaginationConfig {
+  const ServerPaginationConfig({
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalElements,
+    required this.isFirstPage,
+    required this.isLastPage,
+    required this.onPageChange,
+    this.isLoading = false,
+    this.labelBuilder,
+    this.rowsPerPage,
+    this.availableRowsPerPage,
+    this.onRowsPerPageChanged,
+  });
+
+  final int currentPage;
+  final int totalPages;
+  final int totalElements;
+  final bool isFirstPage;
+  final bool isLastPage;
+  final ValueChanged<int> onPageChange;
+  final bool isLoading;
+  final String Function(ServerPaginationConfig config)? labelBuilder;
+  final int? rowsPerPage;
+  final List<int>? availableRowsPerPage;
+  final ValueChanged<int>? onRowsPerPageChanged;
+}
 
 class SfGenericDataGrid<T extends FormConfiguration2<S>,
     S extends ListableModel<S>> extends StatefulWidget {
@@ -19,11 +58,15 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
     this.rowMenuActions,
     this.rowBuilder,
     this.toolbarActions,
+    this.filtersWidget,
     this.setSelectedItems,
     this.actionsColumnName,
     this.rowsPerPage = 10,
     this.availableRowsPerPage = const [10, 25, 50, 100],
     this.showSearchField = true,
+    this.searchValue,
+    this.onSearchChanged,
+    this.searchMode = DataGridSearchMode.local,
     this.allowSorting = true,
     this.allowMultiSelection = true,
     this.allowRowSelection = true,
@@ -43,7 +86,12 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
     this.persistRowsPerPage = true,
     this.preferenceKey,
     this.showPager = true,
-  });
+    this.initialSort,
+    this.serverPagination,
+  }) : assert(
+          searchMode == DataGridSearchMode.local || onSearchChanged != null,
+          'If searchMode is external, onSearchChanged must be provided.',
+        );
 
   final T configuration;
   final List<S> items;
@@ -65,6 +113,7 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
   final List<Widget> Function(S data)? rowBuilder;
 
   final List<Widget>? toolbarActions;
+  final Widget? filtersWidget;
   final void Function(List<S> items)? setSelectedItems;
 
   /// Nombre opcional para la columna de acciones. Si no se especifica,
@@ -74,6 +123,9 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
   final int rowsPerPage;
   final List<int> availableRowsPerPage;
   final bool showSearchField;
+  final String? searchValue;
+  final ValueChanged<String>? onSearchChanged;
+  final DataGridSearchMode searchMode;
   final bool allowSorting;
   final bool allowMultiSelection;
 
@@ -108,6 +160,11 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
   final String? preferenceKey;
 
   final bool showPager;
+  final ServerPaginationConfig? serverPagination;
+
+  /// Ordenamiento inicial aplicado al cargar los datos.
+  /// Mapa de nombre de campo (fieldName) a dirección de ordenamiento.
+  final Map<String, DataGridSortDirection>? initialSort;
 
   @override
   State<SfGenericDataGrid<T, S>> createState() =>
@@ -116,6 +173,7 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
 
 class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     S extends ListableModel<S>> extends State<SfGenericDataGrid<T, S>> {
+  static const _searchDebounceDuration = Duration(milliseconds: 500);
   late _SfGenericDataSource<T, S> dataSource;
   late int _rowsPerPage;
   final DataGridController _controller = DataGridController();
@@ -124,12 +182,15 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
   final TextEditingController _searchController = TextEditingController();
   // Selección acumulada (a través de páginas y filtros)
   final List<S> _selected = <S>[];
+  Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
     _rowsPerPage = widget.rowsPerPage;
     _allItems = widget.items;
+    _searchQuery = widget.searchValue ?? '';
+    _searchController.text = _searchQuery;
     // Pre-selección externa inicial
     if (widget.selectedItems != null && widget.selectedItems!.isNotEmpty) {
       _selected.clear();
@@ -172,7 +233,18 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
         if (!widget.allowRowSelection) return;
         _controller.selectedRows = selectedRows; // sincroniza visual
       },
+      initialSort: widget.initialSort,
     );
+    // Aplicar ordenamiento inicial si está configurado
+    if (widget.initialSort != null && widget.initialSort!.isNotEmpty) {
+      dataSource.applyInitialSort();
+    }
+    // Only apply initial filter if local mode or if we need to sync UI
+    if (widget.searchMode == DataGridSearchMode.local) {
+      if (widget.onSearchChanged == null && _searchQuery.isNotEmpty) {
+        _applyFilter(_searchQuery);
+      }
+    }
   }
 
   void _restoreRowsPerPagePreference() {
@@ -219,7 +291,21 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     if (oldWidget.items != widget.items ||
         oldWidget.configuration != widget.configuration) {
       _allItems = widget.items;
-      _applyFilter(_searchQuery);
+      if (widget.searchMode == DataGridSearchMode.local) {
+        if (widget.onSearchChanged == null) {
+          _searchDebounce?.cancel();
+          _applyFilter(_searchQuery);
+        } else {
+          dataSource.setItems(_allItems);
+        }
+      } else {
+        // In external mode, items are already filtered by parent
+        dataSource.setItems(_allItems);
+      }
+      // Reaplicar ordenamiento inicial si está configurado
+      if (widget.initialSort != null && widget.initialSort!.isNotEmpty) {
+        dataSource.applyInitialSort();
+      }
     }
     // Sincronizar pre-selección externa si cambia la referencia de la lista
     if (oldWidget.selectedItems != widget.selectedItems) {
@@ -244,10 +330,32 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
       dataSource.setShowSelectionColumn(
           widget.allowRowSelection && widget.setSelectedItems != null);
     }
+    if (oldWidget.searchValue != widget.searchValue &&
+        widget.searchValue != _searchController.text) {
+      final newValue = widget.searchValue ?? '';
+      _searchQuery = newValue;
+      _searchController.text = newValue;
+      if (widget.searchMode == DataGridSearchMode.local) {
+        if (widget.onSearchChanged == null) {
+          _searchDebounce?.cancel();
+          _applyFilter(newValue);
+        }
+      }
+    }
+    if (oldWidget.rowsPerPage != widget.rowsPerPage) {
+      setState(() {
+        _rowsPerPage = widget.rowsPerPage;
+        dataSource.updatePageSize(_rowsPerPage);
+      });
+    }
   }
 
   void _applyFilter(String query) {
     _searchQuery = query;
+    if (widget.searchMode == DataGridSearchMode.external) {
+      // Should not be called in external mode, but safe guard
+      return;
+    }
     if (query.isEmpty) {
       dataSource.setItems(_allItems);
       return;
@@ -255,6 +363,19 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     final q = query.toLowerCase();
     final filtered = _allItems.where((e) => e.contains(q)).toList();
     dataSource.setItems(filtered);
+  }
+
+  void _handleSearchChanged(String value) {
+    _searchQuery = value;
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(_searchDebounceDuration, () {
+      if (!mounted) return;
+      if (widget.onSearchChanged != null) {
+        widget.onSearchChanged!(_searchQuery);
+      } else if (widget.searchMode == DataGridSearchMode.local) {
+        _applyFilter(_searchQuery);
+      }
+    });
   }
 
   @override
@@ -271,24 +392,69 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     final footerBg =
         widget.footerBackgroundColor ?? theme?.footerBackgroundColor;
     final columns = widget.columns ?? _buildColumns();
+
+    // Detectar si estamos en una pantalla móvil
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     final children = <Widget>[];
-    if (widget.showSearchField || widget.toolbarActions != null) {
+    final hasTopBarContent = widget.showSearchField ||
+        widget.toolbarActions != null ||
+        widget.filtersWidget != null;
+    if (hasTopBarContent) {
       children.add(
-        Row(
-          children: [
-            if (widget.showSearchField)
-              SizedBox(
-                width: 320,
-                child: TextField(
-                  controller: _searchController,
-                  decoration: const InputDecoration(hintText: 'Buscar...'),
-                  onChanged: (value) => _applyFilter(value),
-                ),
+        isMobile
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.filtersWidget != null) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: widget.filtersWidget!,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (widget.showSearchField)
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextField(
+                        controller: _searchController,
+                        decoration:
+                            const InputDecoration(hintText: 'Buscar...'),
+                        onChanged: _handleSearchChanged,
+                      ),
+                    ),
+                  if (widget.toolbarActions != null) ...[
+                    const SizedBox(height: 8),
+                    Row(children: widget.toolbarActions!),
+                  ],
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.filtersWidget != null) ...[
+                    Flexible(child: widget.filtersWidget!),
+                    const SizedBox(width: 16),
+                  ],
+                  if (widget.toolbarActions != null) ...[
+                    Row(children: widget.toolbarActions!),
+                    if (widget.showSearchField) const SizedBox(width: 16),
+                  ],
+                  if (widget.showSearchField) ...[
+                    const Spacer(),
+                    SizedBox(
+                      width: 320,
+                      child: TextField(
+                        controller: _searchController,
+                        decoration:
+                            const InputDecoration(hintText: 'Buscar...'),
+                        onChanged: _handleSearchChanged,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            const Spacer(),
-            if (widget.toolbarActions != null) ...widget.toolbarActions!,
-          ],
-        ),
       );
       children.add(const SizedBox(height: 8));
     }
@@ -303,6 +469,16 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
           ),
         ),
       );
+      if (widget.serverPagination != null) {
+        children.add(
+          _buildServerPaginationFooter(
+            context: context,
+            pager: widget.serverPagination!,
+            footerBg: footerBg,
+            gridLine: gridLine,
+          ),
+        );
+      }
       return Column(children: children);
     }
     // Construimos el grid una vez y lo envolvemos condicionalmente en Expanded cuando hay datos.
@@ -312,6 +488,7 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
           builder: (context) {
             Widget grid = SfDataGrid(
               source: dataSource,
+              isScrollbarAlwaysShown: true,
               controller: _controller,
               allowSorting: widget.allowSorting,
               selectionMode: widget.allowRowSelection
@@ -319,7 +496,9 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
                       ? SelectionMode.multiple
                       : SelectionMode.single)
                   : SelectionMode.none,
-              columnWidthMode: widget.columnWidthMode,
+              columnWidthMode: isMobile
+                  ? ColumnWidthMode.fitByColumnName
+                  : widget.columnWidthMode,
               columns: columns,
               onSelectionChanged: (added, removed) {
                 if (!widget.allowRowSelection) return;
@@ -362,6 +541,13 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
                 child: grid,
               );
             }
+            // Envolver en SingleChildScrollView si es necesario para scroll horizontal
+            // if (isMobile) {
+            //   return SingleChildScrollView(
+            //     scrollDirection: Axis.horizontal,
+            //     child: grid,
+            //   );
+            // }
             return grid;
           },
         );
@@ -378,7 +564,17 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
         return widget.expanded ? Expanded(child: result) : result;
       })(),
     );
-    if (widget.items.isNotEmpty && widget.showPager) {
+    final hasServerPager = widget.serverPagination != null;
+    if (hasServerPager) {
+      children.add(
+        _buildServerPaginationFooter(
+          context: context,
+          pager: widget.serverPagination!,
+          footerBg: footerBg,
+          gridLine: gridLine,
+        ),
+      );
+    } else if (widget.items.isNotEmpty && widget.showPager) {
       children.add(
         Container(
           // height: 56,
@@ -393,60 +589,121 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Row(
-            children: [
-              // Selector de filas por página
-              Text(
-                'Filas por página:',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(width: 8),
-              DropdownButton<int>(
-                value: _rowsPerPage,
-                items: widget.availableRowsPerPage
-                    .map((v) => DropdownMenuItem<int>(
-                          value: v,
-                          child: Text(
-                            '$v',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (v) {
-                  if (v == null || v == _rowsPerPage) return;
-                  setState(() {
-                    _rowsPerPage = v;
-                    dataSource.updatePageSize(v);
-                  });
-                  _persistRowsPerPage(v);
-                },
-              ),
-              const Spacer(),
-
-              // Paginador
-              Builder(
-                builder: (context) {
-                  Widget pager = SfDataPager(
-                    delegate: dataSource,
-                    pageCount:
-                        (dataSource.rowCount / _rowsPerPage).ceilToDouble(),
-                  );
-                  final hasPagerTheme =
-                      pagerItem != null || pagerSelected != null;
-                  if (hasPagerTheme) {
-                    pager = SfDataPagerTheme(
-                      data: SfDataPagerThemeData(
-                        itemColor: pagerItem,
-                        selectedItemColor: pagerSelected,
+          child: isMobile
+              ? Column(
+                  children: [
+                    // Selector de filas por página
+                    Row(
+                      children: [
+                        Text(
+                          'Filas por página:',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(width: 8),
+                        DropdownButton<int>(
+                          value: _rowsPerPage,
+                          items: widget.availableRowsPerPage
+                              .map((v) => DropdownMenuItem<int>(
+                                    value: v,
+                                    child: Text(
+                                      '$v',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (v) {
+                            if (v == null || v == _rowsPerPage) return;
+                            setState(() {
+                              _rowsPerPage = v;
+                              dataSource.updatePageSize(v);
+                            });
+                            _persistRowsPerPage(v);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Paginador centrado
+                    Center(
+                      child: Builder(
+                        builder: (context) {
+                          Widget pager = SfDataPager(
+                            delegate: dataSource,
+                            pageCount: (dataSource.rowCount / _rowsPerPage)
+                                .ceilToDouble(),
+                          );
+                          final hasPagerTheme =
+                              pagerItem != null || pagerSelected != null;
+                          if (hasPagerTheme) {
+                            pager = SfDataPagerTheme(
+                              data: SfDataPagerThemeData(
+                                itemColor: pagerItem,
+                                selectedItemColor: pagerSelected,
+                              ),
+                              child: pager,
+                            );
+                          }
+                          return pager;
+                        },
                       ),
-                      child: pager,
-                    );
-                  }
-                  return pager;
-                },
-              ),
-            ],
-          ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    // Selector de filas por página
+                    Text(
+                      'Filas por página:',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(width: 8),
+                    DropdownButton<int>(
+                      value: _rowsPerPage,
+                      items: widget.availableRowsPerPage
+                          .map((v) => DropdownMenuItem<int>(
+                                value: v,
+                                child: Text(
+                                  '$v',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        if (v == null || v == _rowsPerPage) return;
+                        setState(() {
+                          _rowsPerPage = v;
+                          dataSource.updatePageSize(v);
+                        });
+                        _persistRowsPerPage(v);
+                      },
+                    ),
+                    const Spacer(),
+
+                    // Paginador
+                    Builder(
+                      builder: (context) {
+                        Widget pager = SfDataPager(
+                          delegate: dataSource,
+                          pageCount: (dataSource.rowCount / _rowsPerPage)
+                              .ceilToDouble(),
+                        );
+                        final hasPagerTheme =
+                            pagerItem != null || pagerSelected != null;
+                        if (hasPagerTheme) {
+                          pager = SfDataPagerTheme(
+                            data: SfDataPagerThemeData(
+                              itemColor: pagerItem,
+                              selectedItemColor: pagerSelected,
+                            ),
+                            child: pager,
+                          );
+                        }
+                        return pager;
+                      },
+                    ),
+                  ],
+                ),
         ),
       );
     }
@@ -455,8 +712,135 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Widget _buildServerPaginationFooter({
+    required BuildContext context,
+    required ServerPaginationConfig pager,
+    required Color? footerBg,
+    required Color? gridLine,
+  }) {
+    final int displayTotalPages = pager.totalPages <= 0 ? 1 : pager.totalPages;
+    final int displayCurrentPage = pager.totalPages <= 0
+        ? 0
+        : ((pager.currentPage + 1).clamp(1, displayTotalPages)).toInt();
+    final label = pager.labelBuilder?.call(pager) ??
+        'Total: ${pager.totalElements} | Page $displayCurrentPage of $displayTotalPages';
+    final rowsPerPage = pager.rowsPerPage ?? _rowsPerPage;
+    final rawOptions =
+        pager.availableRowsPerPage ?? widget.availableRowsPerPage;
+    final options = List<int>.from(rawOptions);
+    if (options.isEmpty) {
+      options.add(rowsPerPage);
+    } else if (!options.contains(rowsPerPage)) {
+      options.add(rowsPerPage);
+      options.sort();
+    }
+    final normalizedRowsPerPage =
+        options.contains(rowsPerPage) ? rowsPerPage : options.first;
+    final dropdownDisabled =
+        pager.isLoading || pager.onRowsPerPageChanged == null;
+    return Container(
+      decoration: BoxDecoration(
+        color: footerBg,
+        border: Border(
+          top: BorderSide(
+            color: (gridLine ?? Theme.of(context).dividerColor)
+                .withValues(alpha: 0.6),
+            width: 0.5,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 720;
+          final selector = Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Filas por página:',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<int>(
+                value: normalizedRowsPerPage,
+                items: options
+                    .map(
+                      (v) => DropdownMenuItem<int>(
+                        value: v,
+                        child: Text(
+                          '$v',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: dropdownDisabled
+                    ? null
+                    : (value) {
+                        if (value == null ||
+                            value == normalizedRowsPerPage ||
+                            pager.onRowsPerPageChanged == null) {
+                          return;
+                        }
+                        pager.onRowsPerPageChanged!(value);
+                      },
+              ),
+            ],
+          );
+          final pagerButtons = Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                onPressed: pager.isFirstPage || pager.isLoading
+                    ? null
+                    : () => pager.onPageChange(pager.currentPage - 1),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                onPressed: pager.isLastPage || pager.isLoading
+                    ? null
+                    : () => pager.onPageChange(pager.currentPage + 1),
+              ),
+            ],
+          );
+          final labelWidget = Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+          if (isCompact) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                labelWidget,
+                const SizedBox(height: 12),
+                selector,
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: pagerButtons,
+                ),
+              ],
+            );
+          }
+          return Row(
+            children: [
+              labelWidget,
+              selector,
+              const SizedBox(width: 16),
+              pagerButtons,
+            ],
+          );
+        },
+      ),
+    );
   }
 
   List<GridColumn> _buildColumns() {
@@ -610,6 +994,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     bool Function(U item)? isItemSelected,
     void Function(U item, bool checked)? onRowCheckboxChanged,
     this.onSyncSelection,
+    this.initialSort,
   }) {
     // Asegura que trabajamos con una lista mutable
     _items = List<U>.from(items);
@@ -637,6 +1022,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
   late bool Function(U item) _isItemSelected;
   late void Function(U item, bool checked) _onRowCheckboxChanged;
   final void Function(List<DataGridRow> selectedRows)? onSyncSelection;
+  final Map<String, DataGridSortDirection>? initialSort;
 
   // Exponer elementos filtrados actuales
   List<U> get items => List<U>.unmodifiable(_items);
@@ -732,33 +1118,63 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     onSyncSelection!(selectedRows);
   }
 
-  @override
-  Future<void> sort() async {
-    if (sortedColumns.isEmpty) return;
-    final sortCol = sortedColumns.first;
-    final name = sortCol.name;
-    final asc = sortCol.sortDirection == DataGridSortDirection.ascending;
+  void _applySort(Map<String, DataGridSortDirection> sortMap) {
+    if (sortMap.isEmpty) return;
 
     int compare(dynamic a, dynamic b) {
-      if (a == null || b == null) return 0;
+      if (a == null || b == null) {
+        if (a == null && b == null) return 0;
+        return a == null ? -1 : 1;
+      }
       if (a is num && b is num) return a.compareTo(b);
-      if (a is String && b is String) return a.compareTo(b);
       if (a is bool && b is bool) return (a == b) ? 0 : (a ? 1 : -1);
       if (a is DateTime && b is DateTime) return a.compareTo(b);
+      // Handle date strings (ISO8601 format)
+      if (a is String && b is String) {
+        final dateA = DateTime.tryParse(a);
+        final dateB = DateTime.tryParse(b);
+        if (dateA != null && dateB != null) {
+          return dateA.compareTo(dateB);
+        }
+        // Fallback to string comparison if not dates
+        return a.compareTo(b);
+      }
       return 0;
     }
 
     _items.sort((a, b) {
-      final va = a.getValue<dynamic>(name);
-      final vb = b.getValue<dynamic>(name);
-      final r = compare(va, vb);
-      return asc ? r : -r;
+      // Aplicar ordenamiento por cada columna en orden de prioridad
+      for (final entry in sortMap.entries) {
+        final fieldName = entry.key;
+        final direction = entry.value;
+        final va = a.getValue<dynamic>(fieldName);
+        final vb = b.getValue<dynamic>(fieldName);
+        final r = compare(va, vb);
+        if (r != 0) {
+          // Si hay diferencia, aplicar dirección y retornar
+          return direction == DataGridSortDirection.ascending ? r : -r;
+        }
+        // Si son iguales, continuar con el siguiente criterio
+      }
+      return 0; // Todos los criterios son iguales
     });
 
     _buildRows();
     notifyListeners();
     _syncControllerSelection();
-    return;
+  }
+
+  @override
+  Future<void> sort() async {
+    if (sortedColumns.isEmpty) return;
+    
+    // Construir mapa de ordenamiento desde sortedColumns
+    final sortMap = <String, DataGridSortDirection>{};
+    for (final sortCol in sortedColumns) {
+      sortMap[sortCol.name] = sortCol.sortDirection;
+    }
+    
+    _applySort(sortMap);
   }
 
   @override
@@ -993,7 +1409,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
                       orElse: () => DropdownOption(label: val, value: val),
                     );
                   }).toList();
-                  
+
                   return Wrap(
                     spacing: 4,
                     runSpacing: 2,
@@ -1003,19 +1419,24 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         labelPadding: EdgeInsets.zero,
-                        avatar: opt.emoji != null ? Text(
-                          opt.emoji!,
-                          style: const TextStyle(fontSize: 14),
-                        ) : opt.icon != null ? Icon(
-                          opt.icon,
-                          size: 14,
-                          color: effectiveStyle.color,
-                        ) : null,
+                        avatar: opt.emoji != null
+                            ? Text(
+                                opt.emoji!,
+                                style: const TextStyle(fontSize: 14),
+                              )
+                            : opt.icon != null
+                                ? Icon(
+                                    opt.icon,
+                                    size: 14,
+                                    color: effectiveStyle.color,
+                                  )
+                                : null,
                         label: Text(
                           opt.label,
                           style: effectiveStyle.copyWith(fontSize: 12),
                         ),
-                        backgroundColor: opt.backgroundColor ?? cellBackgroundColor,
+                        backgroundColor:
+                            opt.backgroundColor ?? cellBackgroundColor,
                         side: BorderSide.none,
                       );
                     }).toList(),
@@ -1118,5 +1539,11 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     rowMenuActions = actions;
     _buildRows();
     notifyListeners();
+  }
+
+  void applyInitialSort() {
+    if (initialSort != null && initialSort!.isNotEmpty) {
+      _applySort(initialSort!);
+    }
   }
 }

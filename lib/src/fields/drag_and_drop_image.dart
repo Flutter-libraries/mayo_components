@@ -61,7 +61,9 @@ class DropImageInfo {
       extension.isNotEmpty ? '$filename.$extension' : filename;
 
   ///
-  bool get isImage => mime.startsWith('image/');
+  bool get isImage => mime.isEmpty || mime.startsWith('image/');
+
+  bool get isUrl => url.isNotEmpty && url.startsWith('http');
 }
 
 ///
@@ -226,22 +228,29 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
               widget.onHoverPreview(false);
             },
             onDropFile: (event) async {
-              widget.onDropImage(
-                DropImageInfo(
+              try {
+                final dropImageInfo = DropImageInfo(
                   await _controller.createFileUrl(event),
                   await _controller.getFileData(event),
                   await _controller.getFileMIME(event),
                   await _controller.getFilename(event),
                   await _controller.getFileSize(event),
-                ),
-              );
-              setState(() => _isDragging = false);
+                );
+                widget.onDropImage(dropImageInfo);
+              } catch (e, stackTrace) {
+                log('Error dropping file: $e', stackTrace: stackTrace);
+              } finally {
+                setState(() => _isDragging = false);
+              }
             },
             onDropFiles: widget.multiple
                 ? (event) async {
-                    if (event == null) return;
-                    widget.onDropImages?.call(
-                      await Future.wait(
+                    if (event == null) {
+                      setState(() => _isDragging = false);
+                      return;
+                    }
+                    try {
+                      final dropImageInfos = await Future.wait(
                         event.map(
                           (e) async => DropImageInfo(
                             await _controller.createFileUrl(e),
@@ -251,10 +260,13 @@ class _DragAndDropImageState extends State<DragAndDropImage> {
                             await _controller.getFileSize(e),
                           ),
                         ),
-                      ),
-                    );
-
-                    setState(() => _isDragging = false);
+                      );
+                      widget.onDropImages?.call(dropImageInfos);
+                    } catch (e, stackTrace) {
+                      log('Error dropping files: $e', stackTrace: stackTrace);
+                    } finally {
+                      setState(() => _isDragging = false);
+                    }
                   }
                 : null,
           ),
