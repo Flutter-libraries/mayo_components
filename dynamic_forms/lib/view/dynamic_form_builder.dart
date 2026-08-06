@@ -59,6 +59,14 @@ class _DynamicFormBuilder2State<T extends FormConfiguration2<U>,
   }
 
   @override
+  void didUpdateWidget(covariant DynamicFormBuilder2<T, U> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.item != oldWidget.item) {
+      item = widget.item;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Form(
       key: widget.formKey,
@@ -76,10 +84,7 @@ class _DynamicFormBuilder2State<T extends FormConfiguration2<U>,
           final section = entry.value;
 
           final fields = widget.formConfiguration.fields
-              .where(
-                (element) =>
-                    element.sectionGroup == index && element.isEditable,
-              )
+              .where((element) => element.sectionGroup == index)
               .toList();
 
           final form = ResponsiveRowColumn(
@@ -127,7 +132,7 @@ class _DynamicFormBuilder2State<T extends FormConfiguration2<U>,
           initialValue: fieldConfig.fieldType == FieldType.number
               ? item.getValue<double>(fieldConfig.fieldName)?.toString() ?? ''
               : item.getValue<String>(fieldConfig.fieldName),
-          enabled: widget.enabled,
+          enabled: widget.enabled && fieldConfig.isEditable,
           decoration: InputDecoration(
             labelText: fieldConfig.label,
             helperMaxLines: 3,
@@ -207,11 +212,13 @@ class _DynamicFormBuilder2State<T extends FormConfiguration2<U>,
                 ? Text(fieldConfig.description!)
                 : null,
             controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (value) {
-              fieldstate.didChange(value);
+            onChanged: widget.enabled && fieldConfig.isEditable
+                ? (value) {
+                    fieldstate.didChange(value);
 
-              _callback(fieldConfig.fieldName, value);
-            },
+                    _callback(fieldConfig.fieldName, value);
+                  }
+                : null,
           ),
         );
       case FieldType.toggle:
@@ -228,11 +235,13 @@ class _DynamicFormBuilder2State<T extends FormConfiguration2<U>,
                 ? Text(fieldConfig.description!)
                 : null,
             controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (value) {
-              fieldstate.didChange(value);
+            onChanged: widget.enabled && fieldConfig.isEditable
+                ? (value) {
+                    fieldstate.didChange(value);
 
-              _callback(fieldConfig.fieldName, value);
-            },
+                    _callback(fieldConfig.fieldName, value);
+                  }
+                : null,
           ),
         );
 
