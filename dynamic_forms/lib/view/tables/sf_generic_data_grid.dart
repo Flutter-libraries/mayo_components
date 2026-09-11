@@ -88,6 +88,7 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
     this.showPager = true,
     this.initialSort,
     this.serverPagination,
+    this.onSortChanged,
   }) : assert(
           searchMode == DataGridSearchMode.local || onSearchChanged != null,
           'If searchMode is external, onSearchChanged must be provided.',
@@ -166,6 +167,11 @@ class SfGenericDataGrid<T extends FormConfiguration2<S>,
   /// Mapa de nombre de campo (fieldName) a dirección de ordenamiento.
   final Map<String, DataGridSortDirection>? initialSort;
 
+  /// Callback invocado al ordenar columnas. Si se proporciona junto con
+  /// [serverPagination], el grid delega el ordenamiento al servidor en lugar
+  /// de ordenar localmente la página actual.
+  final void Function(Map<String, DataGridSortDirection> sortMap)? onSortChanged;
+
   @override
   State<SfGenericDataGrid<T, S>> createState() =>
       _SfGenericDataGridState<T, S>();
@@ -234,6 +240,7 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
         _controller.selectedRows = selectedRows; // sincroniza visual
       },
       initialSort: widget.initialSort,
+      onSortChanged: widget.serverPagination != null ? widget.onSortChanged : null,
     );
     // Aplicar ordenamiento inicial si está configurado
     if (widget.initialSort != null && widget.initialSort!.isNotEmpty) {
@@ -995,6 +1002,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     void Function(U item, bool checked)? onRowCheckboxChanged,
     this.onSyncSelection,
     this.initialSort,
+    this.onSortChanged,
   }) {
     // Asegura que trabajamos con una lista mutable
     _items = List<U>.from(items);
@@ -1023,6 +1031,7 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
   late void Function(U item, bool checked) _onRowCheckboxChanged;
   final void Function(List<DataGridRow> selectedRows)? onSyncSelection;
   final Map<String, DataGridSortDirection>? initialSort;
+  final void Function(Map<String, DataGridSortDirection> sortMap)? onSortChanged;
 
   // Exponer elementos filtrados actuales
   List<U> get items => List<U>.unmodifiable(_items);
@@ -1167,13 +1176,18 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
   @override
   Future<void> sort() async {
     if (sortedColumns.isEmpty) return;
-    
+
     // Construir mapa de ordenamiento desde sortedColumns
     final sortMap = <String, DataGridSortDirection>{};
     for (final sortCol in sortedColumns) {
       sortMap[sortCol.name] = sortCol.sortDirection;
     }
-    
+
+    if (onSortChanged != null) {
+      onSortChanged!(sortMap);
+      return;
+    }
+
     _applySort(sortMap);
   }
 
