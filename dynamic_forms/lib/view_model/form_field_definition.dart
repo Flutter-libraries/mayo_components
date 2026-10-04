@@ -12,7 +12,7 @@ typedef ValidationCallback =
 typedef FormatterCallback<T> = String? Function(T? value);
 
 class DropdownOption {
-  DropdownOption({
+  const DropdownOption({
     required this.label,
     required this.value,
     this.color,
