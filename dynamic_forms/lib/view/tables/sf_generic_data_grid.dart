@@ -295,8 +295,10 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
     if (oldWidget.rowMenuActions != widget.rowMenuActions) {
       dataSource.setRowMenuActions(widget.rowMenuActions);
     }
-    if (oldWidget.items != widget.items ||
-        oldWidget.configuration != widget.configuration) {
+    if (oldWidget.configuration != widget.configuration) {
+      dataSource.configuration = widget.configuration;
+    }
+    if (oldWidget.items != widget.items) {
       _allItems = widget.items;
       if (widget.searchMode == DataGridSearchMode.local) {
         if (widget.onSearchChanged == null) {
@@ -313,6 +315,10 @@ class _SfGenericDataGridState<T extends FormConfiguration2<S>,
       if (widget.initialSort != null && widget.initialSort!.isNotEmpty) {
         dataSource.applyInitialSort();
       }
+    } else if (oldWidget.configuration != widget.configuration) {
+      // Config-only rebuild (e.g. new ProposalFieldsConfig identity): refresh
+      // cells without setItems/notifyListeners sort side-effects from Syncfusion.
+      dataSource.refreshRows();
     }
     // Sincronizar pre-selección externa si cambia la referencia de la lista
     if (oldWidget.selectedItems != widget.selectedItems) {
@@ -1043,6 +1049,23 @@ class _SfGenericDataSource<T extends FormConfiguration2<U>,
     _buildRows();
     notifyListeners();
     _syncControllerSelection();
+  }
+
+  /// Rebuilds row cells after configuration/rowBuilder changes without replacing items.
+  void refreshRows() {
+    _buildRows();
+    notifyListeners();
+    _syncControllerSelection();
+  }
+
+  /// When [onSortChanged] is set, sorting is delegated to the server; Syncfusion must
+  /// not reorder the current page locally on every [notifyListeners].
+  @override
+  Future<void> performSorting(List<DataGridRow> rows) async {
+    if (onSortChanged != null) {
+      return;
+    }
+    await super.performSorting(rows);
   }
 
   void _buildRows() {
